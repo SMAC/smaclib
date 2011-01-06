@@ -1,0 +1,6 @@
+[submodule "conf/chef/cookbooks/mongodb"]
+	path = conf/chef/cookbooks/mongodb
+	url = git://github.com/papercavalier/mongodb-cookbook.git
+[submodule "conf/chef/cookbooks/redis"]
+	path = conf/chef/cookbooks/redis
+	url = git://github.com/papercavalier/redis-cookbook.git
