@@ -37,6 +37,41 @@ class Iface(Interface):
     """
     pass
 
+  def get_all_tasks():
+    pass
+
+  def get_task(task_id):
+    """
+    Parameters:
+     - task_id
+    """
+    pass
+
+  def abort_task(task_id):
+    """
+    Parameters:
+     - task_id
+    """
+    pass
+
+  def pause_task(task_id):
+    """
+    Returns true if the task was running
+
+    Parameters:
+     - task_id
+    """
+    pass
+
+  def resume_task(task_id):
+    """
+    Returns true if the task was paused
+
+    Parameters:
+     - task_id
+    """
+    pass
+
 
 class Client:
   implements(Iface)
@@ -106,6 +141,182 @@ class Client:
     args.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
+  def get_all_tasks(self, ):
+    self._seqid += 1
+    d = self._reqs[self._seqid] = defer.Deferred()
+    self.send_get_all_tasks()
+    return d
+
+  def send_get_all_tasks(self, ):
+    oprot = self._oprot_factory.getProtocol(self._transport)
+    oprot.writeMessageBegin('get_all_tasks', TMessageType.CALL, self._seqid)
+    args = get_all_tasks_args()
+    args.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def recv_get_all_tasks(self, iprot, mtype, rseqid):
+    d = self._reqs.pop(rseqid)
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(iprot)
+      iprot.readMessageEnd()
+      return d.errback(x)
+    result = get_all_tasks_result()
+    result.read(iprot)
+    iprot.readMessageEnd()
+    if result.success != None:
+      return d.callback(result.success)
+    return d.errback(TApplicationException(TApplicationException.MISSING_RESULT, "get_all_tasks failed: unknown result"))
+
+  def get_task(self, task_id):
+    """
+    Parameters:
+     - task_id
+    """
+    self._seqid += 1
+    d = self._reqs[self._seqid] = defer.Deferred()
+    self.send_get_task(task_id)
+    return d
+
+  def send_get_task(self, task_id):
+    oprot = self._oprot_factory.getProtocol(self._transport)
+    oprot.writeMessageBegin('get_task', TMessageType.CALL, self._seqid)
+    args = get_task_args()
+    args.task_id = task_id
+    args.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def recv_get_task(self, iprot, mtype, rseqid):
+    d = self._reqs.pop(rseqid)
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(iprot)
+      iprot.readMessageEnd()
+      return d.errback(x)
+    result = get_task_result()
+    result.read(iprot)
+    iprot.readMessageEnd()
+    if result.success != None:
+      return d.callback(result.success)
+    if result.invalid_task != None:
+      return d.errback(result.invalid_task)
+    return d.errback(TApplicationException(TApplicationException.MISSING_RESULT, "get_task failed: unknown result"))
+
+  def abort_task(self, task_id):
+    """
+    Parameters:
+     - task_id
+    """
+    self._seqid += 1
+    d = self._reqs[self._seqid] = defer.Deferred()
+    self.send_abort_task(task_id)
+    return d
+
+  def send_abort_task(self, task_id):
+    oprot = self._oprot_factory.getProtocol(self._transport)
+    oprot.writeMessageBegin('abort_task', TMessageType.CALL, self._seqid)
+    args = abort_task_args()
+    args.task_id = task_id
+    args.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def recv_abort_task(self, iprot, mtype, rseqid):
+    d = self._reqs.pop(rseqid)
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(iprot)
+      iprot.readMessageEnd()
+      return d.errback(x)
+    result = abort_task_result()
+    result.read(iprot)
+    iprot.readMessageEnd()
+    if result.invalid_task != None:
+      return d.errback(result.invalid_task)
+    if result.invalid_op != None:
+      return d.errback(result.invalid_op)
+    return d.callback(None)
+
+  def pause_task(self, task_id):
+    """
+    Returns true if the task was running
+
+    Parameters:
+     - task_id
+    """
+    self._seqid += 1
+    d = self._reqs[self._seqid] = defer.Deferred()
+    self.send_pause_task(task_id)
+    return d
+
+  def send_pause_task(self, task_id):
+    oprot = self._oprot_factory.getProtocol(self._transport)
+    oprot.writeMessageBegin('pause_task', TMessageType.CALL, self._seqid)
+    args = pause_task_args()
+    args.task_id = task_id
+    args.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def recv_pause_task(self, iprot, mtype, rseqid):
+    d = self._reqs.pop(rseqid)
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(iprot)
+      iprot.readMessageEnd()
+      return d.errback(x)
+    result = pause_task_result()
+    result.read(iprot)
+    iprot.readMessageEnd()
+    if result.success != None:
+      return d.callback(result.success)
+    if result.invalid_task != None:
+      return d.errback(result.invalid_task)
+    if result.invalid_op != None:
+      return d.errback(result.invalid_op)
+    return d.errback(TApplicationException(TApplicationException.MISSING_RESULT, "pause_task failed: unknown result"))
+
+  def resume_task(self, task_id):
+    """
+    Returns true if the task was paused
+
+    Parameters:
+     - task_id
+    """
+    self._seqid += 1
+    d = self._reqs[self._seqid] = defer.Deferred()
+    self.send_resume_task(task_id)
+    return d
+
+  def send_resume_task(self, task_id):
+    oprot = self._oprot_factory.getProtocol(self._transport)
+    oprot.writeMessageBegin('resume_task', TMessageType.CALL, self._seqid)
+    args = resume_task_args()
+    args.task_id = task_id
+    args.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def recv_resume_task(self, iprot, mtype, rseqid):
+    d = self._reqs.pop(rseqid)
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(iprot)
+      iprot.readMessageEnd()
+      return d.errback(x)
+    result = resume_task_result()
+    result.read(iprot)
+    iprot.readMessageEnd()
+    if result.success != None:
+      return d.callback(result.success)
+    if result.invalid_task != None:
+      return d.errback(result.invalid_task)
+    if result.invalid_op != None:
+      return d.errback(result.invalid_op)
+    return d.errback(TApplicationException(TApplicationException.MISSING_RESULT, "resume_task failed: unknown result"))
+
 
 class Processor(TProcessor):
   implements(Iface)
@@ -116,6 +327,11 @@ class Processor(TProcessor):
     self._processMap["ping"] = Processor.process_ping
     self._processMap["restart"] = Processor.process_restart
     self._processMap["shutdown"] = Processor.process_shutdown
+    self._processMap["get_all_tasks"] = Processor.process_get_all_tasks
+    self._processMap["get_task"] = Processor.process_get_task
+    self._processMap["abort_task"] = Processor.process_abort_task
+    self._processMap["pause_task"] = Processor.process_pause_task
+    self._processMap["resume_task"] = Processor.process_resume_task
 
   def process(self, iprot, oprot):
     (name, type, seqid) = iprot.readMessageBegin()
@@ -160,6 +376,136 @@ class Processor(TProcessor):
     iprot.readMessageEnd()
     d = defer.maybeDeferred(self._handler.shutdown, )
     return d
+
+  def process_get_all_tasks(self, seqid, iprot, oprot):
+    args = get_all_tasks_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = get_all_tasks_result()
+    d = defer.maybeDeferred(self._handler.get_all_tasks, )
+    d.addCallback(self.write_results_success_get_all_tasks, result, seqid, oprot)
+    return d
+
+  def write_results_success_get_all_tasks(self, success, result, seqid, oprot):
+    result.success = success
+    oprot.writeMessageBegin("get_all_tasks", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def process_get_task(self, seqid, iprot, oprot):
+    args = get_task_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = get_task_result()
+    d = defer.maybeDeferred(self._handler.get_task, args.task_id)
+    d.addCallback(self.write_results_success_get_task, result, seqid, oprot)
+    d.addErrback(self.write_results_exception_get_task, result, seqid, oprot)
+    return d
+
+  def write_results_success_get_task(self, success, result, seqid, oprot):
+    result.success = success
+    oprot.writeMessageBegin("get_task", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def write_results_exception_get_task(self, error, result, seqid, oprot):
+    try:
+      error.raiseException()
+    except smaclib.api.errors.ttypes.TaskNotFound, invalid_task:
+      result.invalid_task = invalid_task
+    oprot.writeMessageBegin("get_task", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def process_abort_task(self, seqid, iprot, oprot):
+    args = abort_task_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = abort_task_result()
+    d = defer.maybeDeferred(self._handler.abort_task, args.task_id)
+    d.addCallback(self.write_results_success_abort_task, result, seqid, oprot)
+    d.addErrback(self.write_results_exception_abort_task, result, seqid, oprot)
+    return d
+
+  def write_results_success_abort_task(self, success, result, seqid, oprot):
+    result.success = success
+    oprot.writeMessageBegin("abort_task", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def write_results_exception_abort_task(self, error, result, seqid, oprot):
+    try:
+      error.raiseException()
+    except smaclib.api.errors.ttypes.TaskNotFound, invalid_task:
+      result.invalid_task = invalid_task
+    except smaclib.api.errors.ttypes.OperationNotSupported, invalid_op:
+      result.invalid_op = invalid_op
+    oprot.writeMessageBegin("abort_task", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def process_pause_task(self, seqid, iprot, oprot):
+    args = pause_task_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = pause_task_result()
+    d = defer.maybeDeferred(self._handler.pause_task, args.task_id)
+    d.addCallback(self.write_results_success_pause_task, result, seqid, oprot)
+    d.addErrback(self.write_results_exception_pause_task, result, seqid, oprot)
+    return d
+
+  def write_results_success_pause_task(self, success, result, seqid, oprot):
+    result.success = success
+    oprot.writeMessageBegin("pause_task", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def write_results_exception_pause_task(self, error, result, seqid, oprot):
+    try:
+      error.raiseException()
+    except smaclib.api.errors.ttypes.TaskNotFound, invalid_task:
+      result.invalid_task = invalid_task
+    except smaclib.api.errors.ttypes.OperationNotSupported, invalid_op:
+      result.invalid_op = invalid_op
+    oprot.writeMessageBegin("pause_task", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def process_resume_task(self, seqid, iprot, oprot):
+    args = resume_task_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = resume_task_result()
+    d = defer.maybeDeferred(self._handler.resume_task, args.task_id)
+    d.addCallback(self.write_results_success_resume_task, result, seqid, oprot)
+    d.addErrback(self.write_results_exception_resume_task, result, seqid, oprot)
+    return d
+
+  def write_results_success_resume_task(self, success, result, seqid, oprot):
+    result.success = success
+    oprot.writeMessageBegin("resume_task", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def write_results_exception_resume_task(self, error, result, seqid, oprot):
+    try:
+      error.raiseException()
+    except smaclib.api.errors.ttypes.TaskNotFound, invalid_task:
+      result.invalid_task = invalid_task
+    except smaclib.api.errors.ttypes.OperationNotSupported, invalid_op:
+      result.invalid_op = invalid_op
+    oprot.writeMessageBegin("resume_task", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
 
 
 # HELPER FUNCTIONS AND STRUCTURES
@@ -311,6 +657,661 @@ class shutdown_args:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
     oprot.writeStructBegin('shutdown_args')
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+    def validate(self):
+      return
+
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class get_all_tasks_args:
+
+  thrift_spec = (
+  )
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('get_all_tasks_args')
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+    def validate(self):
+      return
+
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class get_all_tasks_result:
+  """
+  Attributes:
+   - success
+  """
+
+  thrift_spec = (
+    (0, TType.LIST, 'success', (TType.I32,None), None, ), # 0
+  )
+
+  def __init__(self, success=None,):
+    self.success = success
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 0:
+        if ftype == TType.LIST:
+          self.success = []
+          (_etype3, _size0) = iprot.readListBegin()
+          for _i4 in xrange(_size0):
+            _elem5 = iprot.readI32();
+            self.success.append(_elem5)
+          iprot.readListEnd()
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('get_all_tasks_result')
+    if self.success != None:
+      oprot.writeFieldBegin('success', TType.LIST, 0)
+      oprot.writeListBegin(TType.I32, len(self.success))
+      for iter6 in self.success:
+        oprot.writeI32(iter6)
+      oprot.writeListEnd()
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+    def validate(self):
+      return
+
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class get_task_args:
+  """
+  Attributes:
+   - task_id
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRING, 'task_id', None, None, ), # 1
+  )
+
+  def __init__(self, task_id=None,):
+    self.task_id = task_id
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.STRING:
+          self.task_id = iprot.readString();
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('get_task_args')
+    if self.task_id != None:
+      oprot.writeFieldBegin('task_id', TType.STRING, 1)
+      oprot.writeString(self.task_id)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+    def validate(self):
+      return
+
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class get_task_result:
+  """
+  Attributes:
+   - success
+   - invalid_task
+  """
+
+  thrift_spec = (
+    (0, TType.I32, 'success', None, None, ), # 0
+    (1, TType.STRUCT, 'invalid_task', (smaclib.api.errors.ttypes.TaskNotFound, smaclib.api.errors.ttypes.TaskNotFound.thrift_spec), None, ), # 1
+  )
+
+  def __init__(self, success=None, invalid_task=None,):
+    self.success = success
+    self.invalid_task = invalid_task
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 0:
+        if ftype == TType.I32:
+          self.success = iprot.readI32();
+        else:
+          iprot.skip(ftype)
+      elif fid == 1:
+        if ftype == TType.STRUCT:
+          self.invalid_task = smaclib.api.errors.ttypes.TaskNotFound()
+          self.invalid_task.read(iprot)
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('get_task_result')
+    if self.success != None:
+      oprot.writeFieldBegin('success', TType.I32, 0)
+      oprot.writeI32(self.success)
+      oprot.writeFieldEnd()
+    if self.invalid_task != None:
+      oprot.writeFieldBegin('invalid_task', TType.STRUCT, 1)
+      self.invalid_task.write(oprot)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+    def validate(self):
+      return
+
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class abort_task_args:
+  """
+  Attributes:
+   - task_id
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRING, 'task_id', None, None, ), # 1
+  )
+
+  def __init__(self, task_id=None,):
+    self.task_id = task_id
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.STRING:
+          self.task_id = iprot.readString();
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('abort_task_args')
+    if self.task_id != None:
+      oprot.writeFieldBegin('task_id', TType.STRING, 1)
+      oprot.writeString(self.task_id)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+    def validate(self):
+      return
+
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class abort_task_result:
+  """
+  Attributes:
+   - invalid_task
+   - invalid_op
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRUCT, 'invalid_task', (smaclib.api.errors.ttypes.TaskNotFound, smaclib.api.errors.ttypes.TaskNotFound.thrift_spec), None, ), # 1
+    (2, TType.STRUCT, 'invalid_op', (smaclib.api.errors.ttypes.OperationNotSupported, smaclib.api.errors.ttypes.OperationNotSupported.thrift_spec), None, ), # 2
+  )
+
+  def __init__(self, invalid_task=None, invalid_op=None,):
+    self.invalid_task = invalid_task
+    self.invalid_op = invalid_op
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.STRUCT:
+          self.invalid_task = smaclib.api.errors.ttypes.TaskNotFound()
+          self.invalid_task.read(iprot)
+        else:
+          iprot.skip(ftype)
+      elif fid == 2:
+        if ftype == TType.STRUCT:
+          self.invalid_op = smaclib.api.errors.ttypes.OperationNotSupported()
+          self.invalid_op.read(iprot)
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('abort_task_result')
+    if self.invalid_task != None:
+      oprot.writeFieldBegin('invalid_task', TType.STRUCT, 1)
+      self.invalid_task.write(oprot)
+      oprot.writeFieldEnd()
+    if self.invalid_op != None:
+      oprot.writeFieldBegin('invalid_op', TType.STRUCT, 2)
+      self.invalid_op.write(oprot)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+    def validate(self):
+      return
+
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class pause_task_args:
+  """
+  Attributes:
+   - task_id
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRING, 'task_id', None, None, ), # 1
+  )
+
+  def __init__(self, task_id=None,):
+    self.task_id = task_id
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.STRING:
+          self.task_id = iprot.readString();
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('pause_task_args')
+    if self.task_id != None:
+      oprot.writeFieldBegin('task_id', TType.STRING, 1)
+      oprot.writeString(self.task_id)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+    def validate(self):
+      return
+
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class pause_task_result:
+  """
+  Attributes:
+   - success
+   - invalid_task
+   - invalid_op
+  """
+
+  thrift_spec = (
+    (0, TType.BOOL, 'success', None, None, ), # 0
+    (1, TType.STRUCT, 'invalid_task', (smaclib.api.errors.ttypes.TaskNotFound, smaclib.api.errors.ttypes.TaskNotFound.thrift_spec), None, ), # 1
+    (2, TType.STRUCT, 'invalid_op', (smaclib.api.errors.ttypes.OperationNotSupported, smaclib.api.errors.ttypes.OperationNotSupported.thrift_spec), None, ), # 2
+  )
+
+  def __init__(self, success=None, invalid_task=None, invalid_op=None,):
+    self.success = success
+    self.invalid_task = invalid_task
+    self.invalid_op = invalid_op
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 0:
+        if ftype == TType.BOOL:
+          self.success = iprot.readBool();
+        else:
+          iprot.skip(ftype)
+      elif fid == 1:
+        if ftype == TType.STRUCT:
+          self.invalid_task = smaclib.api.errors.ttypes.TaskNotFound()
+          self.invalid_task.read(iprot)
+        else:
+          iprot.skip(ftype)
+      elif fid == 2:
+        if ftype == TType.STRUCT:
+          self.invalid_op = smaclib.api.errors.ttypes.OperationNotSupported()
+          self.invalid_op.read(iprot)
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('pause_task_result')
+    if self.success != None:
+      oprot.writeFieldBegin('success', TType.BOOL, 0)
+      oprot.writeBool(self.success)
+      oprot.writeFieldEnd()
+    if self.invalid_task != None:
+      oprot.writeFieldBegin('invalid_task', TType.STRUCT, 1)
+      self.invalid_task.write(oprot)
+      oprot.writeFieldEnd()
+    if self.invalid_op != None:
+      oprot.writeFieldBegin('invalid_op', TType.STRUCT, 2)
+      self.invalid_op.write(oprot)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+    def validate(self):
+      return
+
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class resume_task_args:
+  """
+  Attributes:
+   - task_id
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRING, 'task_id', None, None, ), # 1
+  )
+
+  def __init__(self, task_id=None,):
+    self.task_id = task_id
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.STRING:
+          self.task_id = iprot.readString();
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('resume_task_args')
+    if self.task_id != None:
+      oprot.writeFieldBegin('task_id', TType.STRING, 1)
+      oprot.writeString(self.task_id)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+    def validate(self):
+      return
+
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class resume_task_result:
+  """
+  Attributes:
+   - success
+   - invalid_task
+   - invalid_op
+  """
+
+  thrift_spec = (
+    (0, TType.BOOL, 'success', None, None, ), # 0
+    (1, TType.STRUCT, 'invalid_task', (smaclib.api.errors.ttypes.TaskNotFound, smaclib.api.errors.ttypes.TaskNotFound.thrift_spec), None, ), # 1
+    (2, TType.STRUCT, 'invalid_op', (smaclib.api.errors.ttypes.OperationNotSupported, smaclib.api.errors.ttypes.OperationNotSupported.thrift_spec), None, ), # 2
+  )
+
+  def __init__(self, success=None, invalid_task=None, invalid_op=None,):
+    self.success = success
+    self.invalid_task = invalid_task
+    self.invalid_op = invalid_op
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 0:
+        if ftype == TType.BOOL:
+          self.success = iprot.readBool();
+        else:
+          iprot.skip(ftype)
+      elif fid == 1:
+        if ftype == TType.STRUCT:
+          self.invalid_task = smaclib.api.errors.ttypes.TaskNotFound()
+          self.invalid_task.read(iprot)
+        else:
+          iprot.skip(ftype)
+      elif fid == 2:
+        if ftype == TType.STRUCT:
+          self.invalid_op = smaclib.api.errors.ttypes.OperationNotSupported()
+          self.invalid_op.read(iprot)
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('resume_task_result')
+    if self.success != None:
+      oprot.writeFieldBegin('success', TType.BOOL, 0)
+      oprot.writeBool(self.success)
+      oprot.writeFieldEnd()
+    if self.invalid_task != None:
+      oprot.writeFieldBegin('invalid_task', TType.STRUCT, 1)
+      self.invalid_task.write(oprot)
+      oprot.writeFieldEnd()
+    if self.invalid_op != None:
+      oprot.writeFieldBegin('invalid_op', TType.STRUCT, 2)
+      self.invalid_op.write(oprot)
+      oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
     def validate(self):

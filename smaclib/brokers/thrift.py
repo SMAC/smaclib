@@ -1,8 +1,12 @@
+"""
+
+"""
+
+
 from __future__ import absolute_import
 
 from thrift.transport import TTwisted
 from thrift.protocol import TBinaryProtocol
-
 
 from zope.interface import providedBy
 

@@ -1,11 +1,11 @@
 
-from smaclib.twisted.plugins import module
 from smaclib import modules
+from smaclib.twisted.plugins import module
 
 
 class AnalyzerMaker(module.ModuleMaker):
-    tapname = "smac-analyse"
-    description = "Analyzer module for the SMAC system"
+    tapname = "smac-analyser"
+    description = "Analyzer module for SMAC."
     
     def getModule(self):
         return modules.base.Module()

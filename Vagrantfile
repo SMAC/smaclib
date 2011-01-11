@@ -3,8 +3,9 @@ Vagrant::Config.run do |config|
 
     # config.vm.network "33.1.1.1"
 
-    config.vm.forward_port "mongodb", 27017, 27017
-    config.vm.forward_port "redis", 6379, 6379
+    config.vm.forward_port "mongodb", 27017, 20000
+    config.vm.forward_port "mongodb-web-admin", 28017, 20001
+    config.vm.forward_port "redis", 6379, 20002
 
     # config.vm.share_folder("v-data", "/vagrant_data", "../data")
 
@@ -15,5 +16,7 @@ Vagrant::Config.run do |config|
 
     config.chef.add_role "central_server"
 
-    #config.chef.json.merge!({})
+    config.chef.json.merge!({
+        :mongodb => {:rest => true}
+    })
 end

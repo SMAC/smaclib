@@ -5,6 +5,9 @@
 #
 
 from thrift.Thrift import *
+import smaclib.api.ttypes
+import smaclib.api.errors.ttypes
+
 
 from thrift.transport import TTransport
 from thrift.protocol import TBinaryProtocol, TProtocol
