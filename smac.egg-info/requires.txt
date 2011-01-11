@@ -1,4 +1,0 @@
-txredis
-twisted
-lxml
-thrift

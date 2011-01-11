@@ -1,7 +1,0 @@
-setup.py
-smac.egg-info/PKG-INFO
-smac.egg-info/SOURCES.txt
-smac.egg-info/dependency_links.txt
-smac.egg-info/requires.txt
-smac.egg-info/top_level.txt
-smaclib/__init__.py

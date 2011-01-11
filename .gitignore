@@ -1,0 +1,5 @@
+temp
+smac.egg-info
+*.pid
+*.log
+dropin.cache
