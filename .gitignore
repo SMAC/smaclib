@@ -4,3 +4,5 @@ smac.egg-info
 *.log
 dropin.cache
 .vagrant
+modules
+docs/_build

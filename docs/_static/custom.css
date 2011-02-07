@@ -1,0 +1,227 @@
+@import url("nature.css");
+
+body {
+    background: #333;
+}
+
+div.footer {
+    color: #777;
+    float: left;
+    text-align: left;
+    padding-left: .9em;
+    width: auto;
+    line-height: 2.1em;
+}
+
+.badge {
+    opacity: .6;
+    -webkit-transition: opacity .4s linear;
+}
+.badge:hover {
+    opacity: 1;
+    -webkit-transition: opacity .4s linear;
+}
+
+.badge.revsys-inline {
+    margin-top: 4px;
+    margin-right: 172px !important;
+    margin-bottom: 0 !important;
+    right: 0 !important;
+    position: fixed !important;
+}
+
+div.footer a {
+    color: #555;
+}
+
+pre {
+    -webkit-box-shadow: none;
+    background: #f3f3f3;
+    border-right: 0;
+    border-left: 0;
+    line-height: 1.5em;
+    padding: 7px 13px 9px 13px;
+}
+
+div.related:first-child {
+    border-bottom: 1px solid #368321;
+}
+
+.document + div.related {
+    border-top: 1px solid #368321;
+    padding-bottom: 1px;
+    border-bottom: 1px solid #222;
+}
+
+div.sphinxsidebar input[type="text"] {
+    padding: 2px 3px 3px;
+}
+
+.body blockquote ul,
+.body blockquote ol {
+    padding-left: 0px;
+}
+.body blockquote ul li,
+.body blockquote ol li {
+    padding: 1px 0;
+}
+
+div.bodywrapper {
+    margin-left: 280px;
+}
+
+div.sphinxsidebar {
+    width: 280px;
+    font-size: .9em;
+    line-height: 1.5em;
+}
+div.sphinxsidebar p {
+    margin: .4em 0;
+}
+
+.section dl.docutils {
+    margin-left: 40px;
+}
+
+.section dl.docutils dt {
+    font-weight: bold;
+    display: list-item;
+}
+
+.section dl.docutils dd {
+    margin-left: 0;
+}
+
+.section p,
+.section blockquote,
+.section div.admonition p.admonition-title + p,
+.section dl {
+    max-width: 800px;
+}
+.section dd {
+    max-width: 770px;
+}
+.section div.admonition p.admonition-title + p {
+    display: inline-block;
+    margin: 0;
+}
+.section div.admonition p.admonition-title,
+p.admonition-title::after {
+    vertical-align: top;
+}
+div.footer + hr {
+    display: none;
+}
+.section div.admonition p.last {
+    margin-bottom: 0;
+}
+
+.section .figure.align-left {
+	margin-right: 30px;
+	margin-bottom: 10px;
+	text-align: left;
+}
+.section .figure img {
+	border: 1px solid #ccc;
+	padding: 3px;
+}
+.section .figure.clear.align-left {
+	clear: both;
+	float: none;
+}
+.section .figure .caption {
+	font-size: 0.9em;
+	font-style: italic;
+	margin-top: 3px;
+}
+
+.section h2, .section h3 {
+	clear: both;
+}
+
+/* +Notes */
+div.note {
+    background-color: #EAF4FF;
+    border: 1px solid #a4c3ed;
+    border-right: 0;
+    border-left: 0;
+}
+div.note .admonition-title {
+    color: #14567F;
+}
+/* -Notes */
+
+/* +Todos */
+div.admonition-todo {
+    background-color: #EAF4FF;
+    border: 1px solid #a4c3ed;
+    border-right: 0;
+    border-left: 0;
+}
+div.admonition-todo .admonition-title {
+    color: #14567F;
+}
+/* -Todos */
+
+/* API */
+
+.section dl + dl:before {
+    border-top: 1px solid #eee;
+    display: block;
+    content: " ";
+    padding-bottom: .8em;
+}
+.section dl + dl {
+    margin-top: 0;
+    border-top: 1px solid #aaa;
+}
+
+.section dl.cmdoption {
+    border-top: 0;
+    margin-bottom: 0;
+    margin-top: 0;
+}
+.section dl.cmdoption:before {
+    border-top: 0;
+    padding: 0;
+    margin: 0;
+}
+
+.section dd > dl.cmdoption > dt {
+    display: block;
+    float: left;
+    min-width: 150px;
+    margin: 0;
+    padding: 1px 8px 1px 5px;
+}
+.section dd > dl.cmdoption > dd {
+    display: block;
+    border-bottom: 1px solid #AAA;
+    margin: 0;
+    padding: 1px 8px 1px 5px;
+}
+.section dd > dl.cmdoption > dd > p:last-child {
+    margin-bottom: 0;
+}
+dd > dl.cmdoption > dt tt.descname {
+    font-weight: normal;
+    color: #3E4349;
+}
+
+.option-list td:last-child {
+    padding-left: 0px;
+}
+td.option-group {
+    white-space: nowrap;
+    width: 150px;
+}
+table.option-list {
+    width: 100%;
+}
+
+
+
+
+
+
+
