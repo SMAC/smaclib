@@ -4,3 +4,6 @@
 [submodule "conf/chef/cookbooks/redis"]
 	path = conf/chef/cookbooks/redis
 	url = git://github.com/papercavalier/redis-cookbook.git
+[submodule "conf/api"]
+	path = conf/api
+	url = git://github.com/SMAC/smac-api
