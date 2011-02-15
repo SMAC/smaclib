@@ -147,6 +147,6 @@ class Document(object):
         
         d = defer.DeferredList(dl)
         d.addCallback(save)
-        return d.addCallback(lambda _: self.pk)
+        return d.addCallback(lambda _: self)
 
 

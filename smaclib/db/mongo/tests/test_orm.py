@@ -17,7 +17,7 @@ import txmongo
 DATABASE = {
     'connection': {
         'host': "127.0.0.1",
-        'port': 20000,
+        'port': 27017,
         'reconnect': True,
     },
     'database': 'test',
@@ -66,7 +66,7 @@ def requiresConnection(func):
 
         def call(connection, *args, **kwargs):
             d = defer.maybeDeferred(func, *args, **kwargs)
-            d.addCallback(drop_database, connection)
+            d.addBoth(drop_database, connection)
             d.addBoth(disconnect, connection)
             return d
 
@@ -98,8 +98,8 @@ class ObjectMapperTest(unittest.TestCase):
     """
 
     def save_and_get(self, document):
-        def get(doc_id):
-            return document.__class__.collection.one(doc_id)
+        def get(doc):
+            return document.__class__.collection.one(doc.pk)
         return document.save().addCallback(get)
 
     def test_compare(self):
@@ -162,6 +162,62 @@ class ObjectMapperTest(unittest.TestCase):
         document = SimpleDocument()
         self.assertEqual(document.string_field, '', "Incorrect default value")
 
+    @requiresConnection
+    @defer.inlineCallbacks
+    def test_or(self):
+        a = SimpleDocument(string_field="a")
+        id_a = yield a.save()
+        id_b = yield SimpleDocument(string_field="b").save()
+        id_c = yield SimpleDocument(string_field="c").save()
+        id_d = yield SimpleDocument(string_field="d").save()
+        
+        id_a = yield SimpleDocument.collection.find({
+            "$or": [
+                {"string_field": "a"},
+                {"string_field": "e"},
+            ]
+        })
+        ret_a = yield SimpleDocument.collection.one({
+            "$or": [
+                {"string_field": "a"},
+                {"string_field": "e"},
+            ]
+        })
+        id_ab = yield SimpleDocument.collection.find({
+            "$or": [
+                {"string_field": "a"},
+                {"string_field": "b"},
+            ]
+        })
+        id_ac = yield SimpleDocument.collection.find({
+            "$or": [
+                {"string_field": "a"},
+                {"string_field": "c"},
+            ]
+        })
+        id_abc = yield SimpleDocument.collection.find({
+            "$or": [
+                {"string_field": "a"},
+                {"string_field": "b"},
+                {"string_field": "c"},
+            ]
+        })
+        id_abcd = yield SimpleDocument.collection.find({
+            "$or": [
+                {"string_field": "a"},
+                {"string_field": "b"},
+                {"string_field": "c"},
+                {"string_field": "d"},
+            ]
+        })
+        
+        self.assertEqual(len(id_a), 1)
+        self.assertEqual(a, ret_a)
+        self.assertEqual(len(id_ab), 2)
+        self.assertEqual(len(id_ac), 2)
+        self.assertEqual(len(id_abc), 3)
+        self.assertEqual(len(id_abcd), 4)
+
     def test_notfield(self):
         class MyDocument(mongo.Document):
             not_a_field = "This is not a field"
@@ -175,7 +231,8 @@ class ObjectMapperTest(unittest.TestCase):
     def test_one(self):
         # Insert a document
         original = SimpleDocument()
-        object_id = yield original.save()
+        document = yield original.save()
+        object_id = document.pk
 
         retrieved_obj = yield SimpleDocument.collection.one(object_id)
         retrieved_str = yield SimpleDocument.collection.one(str(object_id))
@@ -188,8 +245,8 @@ class ObjectMapperTest(unittest.TestCase):
     def test_find(self):
         # Insert a document
         original = SimpleDocument()
-        object_id = yield original.save()
-        retrieved = yield SimpleDocument.collection.find({'_id': object_id})
+        document = yield original.save()
+        retrieved = yield SimpleDocument.collection.find({'_id': document.pk})
 
         self.assertEqual(original, list(retrieved)[0])
 

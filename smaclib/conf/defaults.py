@@ -39,6 +39,9 @@ rest = {
     }
 }
 
+server_key = None
+server_crt = None
+
 thrift_port = 7081
 
 module_id = None

@@ -34,7 +34,12 @@ This directory should be on the same partition as the uploads_root, in order
 to speed up the move operations.
 """
 
-ftp_server_ip = '127.0.0.1'
+workflows_root = filepath.FilePath(__file__).parent().child('workflows')
+"""
+Path to the directory containing the worflows to apply to incoming transfers.
+"""
+
+ftp_server_ip = '34.34.34.10'
 """
 IP on which the FTP server for the uploads shall listen on. This value is also
 sent back to the clients as the host when requesting the allocation of an 
@@ -45,6 +50,10 @@ ftp_server_port = 10000
 """
 Port on which the FTP server shall listen.
 """
+
+conv_server_port = 10001
+
+conv_server_ip = '127.0.0.1'
 
 video_bitrates = {
     'default':  '128k',
@@ -64,4 +73,9 @@ Audio bitrate presets
 """
 
 audio_sampling_rate = '22050'
+
+
+
+
+
 

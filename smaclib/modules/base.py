@@ -33,7 +33,10 @@ class Module(object):
         """
         self.task_manager = tasks.TaskManager()
 
-    def get_id(self):
+    def remote_getID(self):
+        return self.getID()
+
+    def getID(self):
         """
         Returns a unique id for this module. Normally this is defined in the
         settings and has a well known value.
@@ -62,14 +65,14 @@ class Module(object):
         
         return hashlib.sha256(str(uuid.getnode())).hexdigest()
 
-    def get_all_tasks(self):
+    def remote_getAllTasks(self):
         """
         Returns a list TaskInfo instances describing all tasks currently
         registered to the task manager of this module.
         """
-        return [self.get_task(t) for t in self.task_manager.task_ids]
+        return [self.remote_getTask(t) for t in self.task_manager.task_ids]
 
-    def get_task(self, task_id):
+    def remote_getTask(self, task_id):
         """
         Returns the details about the task identified by task_id registered to
         the task manager of this module.
@@ -80,7 +83,7 @@ class Module(object):
         task = self.task_manager.get(task_id)
         return ttypes.TaskInfo(task.id, task.name, task.status, task.completed)
 
-    def abort_task(self, task_id):
+    def remote_abortTask(self, task_id):
         """
         Tries to cancel the task identified by task_id. If the task does not
         support cancelling, an OperationNotSupported exception is raised.
@@ -90,7 +93,7 @@ class Module(object):
         except NotImplementedError:
             raise error.OperationNotSupported(task_id, "cancelled")
 
-    def pause_task(self, task_id):
+    def remote_pauseTask(self, task_id):
         """
         Tries to pause the task identified by task_id. If the task does not
         support resuming, an OperationNotSupported exception is raised.
@@ -106,7 +109,7 @@ class Module(object):
         else:
             return running
 
-    def resume_task(self, task_id):
+    def remote_resumeTask(self, task_id):
         """
         Tries to resume the task identified by task_id. If the task does not
         support resuming, an OperationNotSupported exception is raised.
@@ -122,13 +125,13 @@ class Module(object):
         else:
             return paused
 
-    def ping(self):
+    def remote_ping(self):
         """
         Simple noop method to check if the communication with a remote module
         is working as expected.
         """
 
-    def restart(self):
+    def remote_restart(self):
         """
         Restarts the module by terminating the process completely and
         restarting it.

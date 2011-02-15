@@ -25,6 +25,12 @@ class Iface(Interface):
     """
     pass
 
+  def getID():
+    """
+    Returns the unique ID of this module on the whole smac network
+    """
+    pass
+
   def restart():
     """
     Restarts the receiving module
@@ -37,24 +43,24 @@ class Iface(Interface):
     """
     pass
 
-  def get_all_tasks():
+  def getAllTasks():
     pass
 
-  def get_task(task_id):
+  def getTask(task_id):
     """
     Parameters:
      - task_id
     """
     pass
 
-  def abort_task(task_id):
+  def abortTask(task_id):
     """
     Parameters:
      - task_id
     """
     pass
 
-  def pause_task(task_id):
+  def pauseTask(task_id):
     """
     Returns true if the task was running
 
@@ -63,7 +69,7 @@ class Iface(Interface):
     """
     pass
 
-  def resume_task(task_id):
+  def resumeTask(task_id):
     """
     Returns true if the task was paused
 
@@ -109,7 +115,40 @@ class Client:
     result = ping_result()
     result.read(iprot)
     iprot.readMessageEnd()
-    return d.callback(None)
+    if result.success != None:
+      return d.callback(result.success)
+    return d.errback(TApplicationException(TApplicationException.MISSING_RESULT, "ping failed: unknown result"))
+
+  def getID(self, ):
+    """
+    Returns the unique ID of this module on the whole smac network
+    """
+    self._seqid += 1
+    d = self._reqs[self._seqid] = defer.Deferred()
+    self.send_getID()
+    return d
+
+  def send_getID(self, ):
+    oprot = self._oprot_factory.getProtocol(self._transport)
+    oprot.writeMessageBegin('getID', TMessageType.CALL, self._seqid)
+    args = getID_args()
+    args.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def recv_getID(self, iprot, mtype, rseqid):
+    d = self._reqs.pop(rseqid)
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(iprot)
+      iprot.readMessageEnd()
+      return d.errback(x)
+    result = getID_result()
+    result.read(iprot)
+    iprot.readMessageEnd()
+    if result.success != None:
+      return d.callback(result.success)
+    return d.errback(TApplicationException(TApplicationException.MISSING_RESULT, "getID failed: unknown result"))
 
   def restart(self, ):
     """
@@ -141,96 +180,96 @@ class Client:
     args.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
-  def get_all_tasks(self, ):
+  def getAllTasks(self, ):
     self._seqid += 1
     d = self._reqs[self._seqid] = defer.Deferred()
-    self.send_get_all_tasks()
+    self.send_getAllTasks()
     return d
 
-  def send_get_all_tasks(self, ):
+  def send_getAllTasks(self, ):
     oprot = self._oprot_factory.getProtocol(self._transport)
-    oprot.writeMessageBegin('get_all_tasks', TMessageType.CALL, self._seqid)
-    args = get_all_tasks_args()
+    oprot.writeMessageBegin('getAllTasks', TMessageType.CALL, self._seqid)
+    args = getAllTasks_args()
     args.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
 
-  def recv_get_all_tasks(self, iprot, mtype, rseqid):
+  def recv_getAllTasks(self, iprot, mtype, rseqid):
     d = self._reqs.pop(rseqid)
     if mtype == TMessageType.EXCEPTION:
       x = TApplicationException()
       x.read(iprot)
       iprot.readMessageEnd()
       return d.errback(x)
-    result = get_all_tasks_result()
+    result = getAllTasks_result()
     result.read(iprot)
     iprot.readMessageEnd()
     if result.success != None:
       return d.callback(result.success)
-    return d.errback(TApplicationException(TApplicationException.MISSING_RESULT, "get_all_tasks failed: unknown result"))
+    return d.errback(TApplicationException(TApplicationException.MISSING_RESULT, "getAllTasks failed: unknown result"))
 
-  def get_task(self, task_id):
+  def getTask(self, task_id):
     """
     Parameters:
      - task_id
     """
     self._seqid += 1
     d = self._reqs[self._seqid] = defer.Deferred()
-    self.send_get_task(task_id)
+    self.send_getTask(task_id)
     return d
 
-  def send_get_task(self, task_id):
+  def send_getTask(self, task_id):
     oprot = self._oprot_factory.getProtocol(self._transport)
-    oprot.writeMessageBegin('get_task', TMessageType.CALL, self._seqid)
-    args = get_task_args()
+    oprot.writeMessageBegin('getTask', TMessageType.CALL, self._seqid)
+    args = getTask_args()
     args.task_id = task_id
     args.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
 
-  def recv_get_task(self, iprot, mtype, rseqid):
+  def recv_getTask(self, iprot, mtype, rseqid):
     d = self._reqs.pop(rseqid)
     if mtype == TMessageType.EXCEPTION:
       x = TApplicationException()
       x.read(iprot)
       iprot.readMessageEnd()
       return d.errback(x)
-    result = get_task_result()
+    result = getTask_result()
     result.read(iprot)
     iprot.readMessageEnd()
     if result.success != None:
       return d.callback(result.success)
     if result.invalid_task != None:
       return d.errback(result.invalid_task)
-    return d.errback(TApplicationException(TApplicationException.MISSING_RESULT, "get_task failed: unknown result"))
+    return d.errback(TApplicationException(TApplicationException.MISSING_RESULT, "getTask failed: unknown result"))
 
-  def abort_task(self, task_id):
+  def abortTask(self, task_id):
     """
     Parameters:
      - task_id
     """
     self._seqid += 1
     d = self._reqs[self._seqid] = defer.Deferred()
-    self.send_abort_task(task_id)
+    self.send_abortTask(task_id)
     return d
 
-  def send_abort_task(self, task_id):
+  def send_abortTask(self, task_id):
     oprot = self._oprot_factory.getProtocol(self._transport)
-    oprot.writeMessageBegin('abort_task', TMessageType.CALL, self._seqid)
-    args = abort_task_args()
+    oprot.writeMessageBegin('abortTask', TMessageType.CALL, self._seqid)
+    args = abortTask_args()
     args.task_id = task_id
     args.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
 
-  def recv_abort_task(self, iprot, mtype, rseqid):
+  def recv_abortTask(self, iprot, mtype, rseqid):
     d = self._reqs.pop(rseqid)
     if mtype == TMessageType.EXCEPTION:
       x = TApplicationException()
       x.read(iprot)
       iprot.readMessageEnd()
       return d.errback(x)
-    result = abort_task_result()
+    result = abortTask_result()
     result.read(iprot)
     iprot.readMessageEnd()
     if result.invalid_task != None:
@@ -239,7 +278,7 @@ class Client:
       return d.errback(result.invalid_op)
     return d.callback(None)
 
-  def pause_task(self, task_id):
+  def pauseTask(self, task_id):
     """
     Returns true if the task was running
 
@@ -248,26 +287,26 @@ class Client:
     """
     self._seqid += 1
     d = self._reqs[self._seqid] = defer.Deferred()
-    self.send_pause_task(task_id)
+    self.send_pauseTask(task_id)
     return d
 
-  def send_pause_task(self, task_id):
+  def send_pauseTask(self, task_id):
     oprot = self._oprot_factory.getProtocol(self._transport)
-    oprot.writeMessageBegin('pause_task', TMessageType.CALL, self._seqid)
-    args = pause_task_args()
+    oprot.writeMessageBegin('pauseTask', TMessageType.CALL, self._seqid)
+    args = pauseTask_args()
     args.task_id = task_id
     args.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
 
-  def recv_pause_task(self, iprot, mtype, rseqid):
+  def recv_pauseTask(self, iprot, mtype, rseqid):
     d = self._reqs.pop(rseqid)
     if mtype == TMessageType.EXCEPTION:
       x = TApplicationException()
       x.read(iprot)
       iprot.readMessageEnd()
       return d.errback(x)
-    result = pause_task_result()
+    result = pauseTask_result()
     result.read(iprot)
     iprot.readMessageEnd()
     if result.success != None:
@@ -276,9 +315,9 @@ class Client:
       return d.errback(result.invalid_task)
     if result.invalid_op != None:
       return d.errback(result.invalid_op)
-    return d.errback(TApplicationException(TApplicationException.MISSING_RESULT, "pause_task failed: unknown result"))
+    return d.errback(TApplicationException(TApplicationException.MISSING_RESULT, "pauseTask failed: unknown result"))
 
-  def resume_task(self, task_id):
+  def resumeTask(self, task_id):
     """
     Returns true if the task was paused
 
@@ -287,26 +326,26 @@ class Client:
     """
     self._seqid += 1
     d = self._reqs[self._seqid] = defer.Deferred()
-    self.send_resume_task(task_id)
+    self.send_resumeTask(task_id)
     return d
 
-  def send_resume_task(self, task_id):
+  def send_resumeTask(self, task_id):
     oprot = self._oprot_factory.getProtocol(self._transport)
-    oprot.writeMessageBegin('resume_task', TMessageType.CALL, self._seqid)
-    args = resume_task_args()
+    oprot.writeMessageBegin('resumeTask', TMessageType.CALL, self._seqid)
+    args = resumeTask_args()
     args.task_id = task_id
     args.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
 
-  def recv_resume_task(self, iprot, mtype, rseqid):
+  def recv_resumeTask(self, iprot, mtype, rseqid):
     d = self._reqs.pop(rseqid)
     if mtype == TMessageType.EXCEPTION:
       x = TApplicationException()
       x.read(iprot)
       iprot.readMessageEnd()
       return d.errback(x)
-    result = resume_task_result()
+    result = resumeTask_result()
     result.read(iprot)
     iprot.readMessageEnd()
     if result.success != None:
@@ -315,7 +354,7 @@ class Client:
       return d.errback(result.invalid_task)
     if result.invalid_op != None:
       return d.errback(result.invalid_op)
-    return d.errback(TApplicationException(TApplicationException.MISSING_RESULT, "resume_task failed: unknown result"))
+    return d.errback(TApplicationException(TApplicationException.MISSING_RESULT, "resumeTask failed: unknown result"))
 
 
 class Processor(TProcessor):
@@ -325,13 +364,14 @@ class Processor(TProcessor):
     self._handler = Iface(handler)
     self._processMap = {}
     self._processMap["ping"] = Processor.process_ping
+    self._processMap["getID"] = Processor.process_getID
     self._processMap["restart"] = Processor.process_restart
     self._processMap["shutdown"] = Processor.process_shutdown
-    self._processMap["get_all_tasks"] = Processor.process_get_all_tasks
-    self._processMap["get_task"] = Processor.process_get_task
-    self._processMap["abort_task"] = Processor.process_abort_task
-    self._processMap["pause_task"] = Processor.process_pause_task
-    self._processMap["resume_task"] = Processor.process_resume_task
+    self._processMap["getAllTasks"] = Processor.process_getAllTasks
+    self._processMap["getTask"] = Processor.process_getTask
+    self._processMap["abortTask"] = Processor.process_abortTask
+    self._processMap["pauseTask"] = Processor.process_pauseTask
+    self._processMap["resumeTask"] = Processor.process_resumeTask
 
   def process(self, iprot, oprot):
     (name, type, seqid) = iprot.readMessageBegin()
@@ -363,6 +403,22 @@ class Processor(TProcessor):
     oprot.writeMessageEnd()
     oprot.trans.flush()
 
+  def process_getID(self, seqid, iprot, oprot):
+    args = getID_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = getID_result()
+    d = defer.maybeDeferred(self._handler.getID, )
+    d.addCallback(self.write_results_success_getID, result, seqid, oprot)
+    return d
+
+  def write_results_success_getID(self, success, result, seqid, oprot):
+    result.success = success
+    oprot.writeMessageBegin("getID", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
   def process_restart(self, seqid, iprot, oprot):
     args = restart_args()
     args.read(iprot)
@@ -377,132 +433,132 @@ class Processor(TProcessor):
     d = defer.maybeDeferred(self._handler.shutdown, )
     return d
 
-  def process_get_all_tasks(self, seqid, iprot, oprot):
-    args = get_all_tasks_args()
+  def process_getAllTasks(self, seqid, iprot, oprot):
+    args = getAllTasks_args()
     args.read(iprot)
     iprot.readMessageEnd()
-    result = get_all_tasks_result()
-    d = defer.maybeDeferred(self._handler.get_all_tasks, )
-    d.addCallback(self.write_results_success_get_all_tasks, result, seqid, oprot)
+    result = getAllTasks_result()
+    d = defer.maybeDeferred(self._handler.getAllTasks, )
+    d.addCallback(self.write_results_success_getAllTasks, result, seqid, oprot)
     return d
 
-  def write_results_success_get_all_tasks(self, success, result, seqid, oprot):
+  def write_results_success_getAllTasks(self, success, result, seqid, oprot):
     result.success = success
-    oprot.writeMessageBegin("get_all_tasks", TMessageType.REPLY, seqid)
+    oprot.writeMessageBegin("getAllTasks", TMessageType.REPLY, seqid)
     result.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
 
-  def process_get_task(self, seqid, iprot, oprot):
-    args = get_task_args()
+  def process_getTask(self, seqid, iprot, oprot):
+    args = getTask_args()
     args.read(iprot)
     iprot.readMessageEnd()
-    result = get_task_result()
-    d = defer.maybeDeferred(self._handler.get_task, args.task_id)
-    d.addCallback(self.write_results_success_get_task, result, seqid, oprot)
-    d.addErrback(self.write_results_exception_get_task, result, seqid, oprot)
+    result = getTask_result()
+    d = defer.maybeDeferred(self._handler.getTask, args.task_id)
+    d.addCallback(self.write_results_success_getTask, result, seqid, oprot)
+    d.addErrback(self.write_results_exception_getTask, result, seqid, oprot)
     return d
 
-  def write_results_success_get_task(self, success, result, seqid, oprot):
+  def write_results_success_getTask(self, success, result, seqid, oprot):
     result.success = success
-    oprot.writeMessageBegin("get_task", TMessageType.REPLY, seqid)
+    oprot.writeMessageBegin("getTask", TMessageType.REPLY, seqid)
     result.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
 
-  def write_results_exception_get_task(self, error, result, seqid, oprot):
+  def write_results_exception_getTask(self, error, result, seqid, oprot):
     try:
       error.raiseException()
     except smaclib.api.errors.ttypes.TaskNotFound, invalid_task:
       result.invalid_task = invalid_task
-    oprot.writeMessageBegin("get_task", TMessageType.REPLY, seqid)
+    oprot.writeMessageBegin("getTask", TMessageType.REPLY, seqid)
     result.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
 
-  def process_abort_task(self, seqid, iprot, oprot):
-    args = abort_task_args()
+  def process_abortTask(self, seqid, iprot, oprot):
+    args = abortTask_args()
     args.read(iprot)
     iprot.readMessageEnd()
-    result = abort_task_result()
-    d = defer.maybeDeferred(self._handler.abort_task, args.task_id)
-    d.addCallback(self.write_results_success_abort_task, result, seqid, oprot)
-    d.addErrback(self.write_results_exception_abort_task, result, seqid, oprot)
+    result = abortTask_result()
+    d = defer.maybeDeferred(self._handler.abortTask, args.task_id)
+    d.addCallback(self.write_results_success_abortTask, result, seqid, oprot)
+    d.addErrback(self.write_results_exception_abortTask, result, seqid, oprot)
     return d
 
-  def write_results_success_abort_task(self, success, result, seqid, oprot):
+  def write_results_success_abortTask(self, success, result, seqid, oprot):
     result.success = success
-    oprot.writeMessageBegin("abort_task", TMessageType.REPLY, seqid)
+    oprot.writeMessageBegin("abortTask", TMessageType.REPLY, seqid)
     result.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
 
-  def write_results_exception_abort_task(self, error, result, seqid, oprot):
-    try:
-      error.raiseException()
-    except smaclib.api.errors.ttypes.TaskNotFound, invalid_task:
-      result.invalid_task = invalid_task
-    except smaclib.api.errors.ttypes.OperationNotSupported, invalid_op:
-      result.invalid_op = invalid_op
-    oprot.writeMessageBegin("abort_task", TMessageType.REPLY, seqid)
-    result.write(oprot)
-    oprot.writeMessageEnd()
-    oprot.trans.flush()
-
-  def process_pause_task(self, seqid, iprot, oprot):
-    args = pause_task_args()
-    args.read(iprot)
-    iprot.readMessageEnd()
-    result = pause_task_result()
-    d = defer.maybeDeferred(self._handler.pause_task, args.task_id)
-    d.addCallback(self.write_results_success_pause_task, result, seqid, oprot)
-    d.addErrback(self.write_results_exception_pause_task, result, seqid, oprot)
-    return d
-
-  def write_results_success_pause_task(self, success, result, seqid, oprot):
-    result.success = success
-    oprot.writeMessageBegin("pause_task", TMessageType.REPLY, seqid)
-    result.write(oprot)
-    oprot.writeMessageEnd()
-    oprot.trans.flush()
-
-  def write_results_exception_pause_task(self, error, result, seqid, oprot):
+  def write_results_exception_abortTask(self, error, result, seqid, oprot):
     try:
       error.raiseException()
     except smaclib.api.errors.ttypes.TaskNotFound, invalid_task:
       result.invalid_task = invalid_task
     except smaclib.api.errors.ttypes.OperationNotSupported, invalid_op:
       result.invalid_op = invalid_op
-    oprot.writeMessageBegin("pause_task", TMessageType.REPLY, seqid)
+    oprot.writeMessageBegin("abortTask", TMessageType.REPLY, seqid)
     result.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
 
-  def process_resume_task(self, seqid, iprot, oprot):
-    args = resume_task_args()
+  def process_pauseTask(self, seqid, iprot, oprot):
+    args = pauseTask_args()
     args.read(iprot)
     iprot.readMessageEnd()
-    result = resume_task_result()
-    d = defer.maybeDeferred(self._handler.resume_task, args.task_id)
-    d.addCallback(self.write_results_success_resume_task, result, seqid, oprot)
-    d.addErrback(self.write_results_exception_resume_task, result, seqid, oprot)
+    result = pauseTask_result()
+    d = defer.maybeDeferred(self._handler.pauseTask, args.task_id)
+    d.addCallback(self.write_results_success_pauseTask, result, seqid, oprot)
+    d.addErrback(self.write_results_exception_pauseTask, result, seqid, oprot)
     return d
 
-  def write_results_success_resume_task(self, success, result, seqid, oprot):
+  def write_results_success_pauseTask(self, success, result, seqid, oprot):
     result.success = success
-    oprot.writeMessageBegin("resume_task", TMessageType.REPLY, seqid)
+    oprot.writeMessageBegin("pauseTask", TMessageType.REPLY, seqid)
     result.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
 
-  def write_results_exception_resume_task(self, error, result, seqid, oprot):
+  def write_results_exception_pauseTask(self, error, result, seqid, oprot):
     try:
       error.raiseException()
     except smaclib.api.errors.ttypes.TaskNotFound, invalid_task:
       result.invalid_task = invalid_task
     except smaclib.api.errors.ttypes.OperationNotSupported, invalid_op:
       result.invalid_op = invalid_op
-    oprot.writeMessageBegin("resume_task", TMessageType.REPLY, seqid)
+    oprot.writeMessageBegin("pauseTask", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def process_resumeTask(self, seqid, iprot, oprot):
+    args = resumeTask_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = resumeTask_result()
+    d = defer.maybeDeferred(self._handler.resumeTask, args.task_id)
+    d.addCallback(self.write_results_success_resumeTask, result, seqid, oprot)
+    d.addErrback(self.write_results_exception_resumeTask, result, seqid, oprot)
+    return d
+
+  def write_results_success_resumeTask(self, success, result, seqid, oprot):
+    result.success = success
+    oprot.writeMessageBegin("resumeTask", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def write_results_exception_resumeTask(self, error, result, seqid, oprot):
+    try:
+      error.raiseException()
+    except smaclib.api.errors.ttypes.TaskNotFound, invalid_task:
+      result.invalid_task = invalid_task
+    except smaclib.api.errors.ttypes.OperationNotSupported, invalid_op:
+      result.invalid_op = invalid_op
+    oprot.writeMessageBegin("resumeTask", TMessageType.REPLY, seqid)
     result.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
@@ -552,6 +608,64 @@ class ping_args:
     return not (self == other)
 
 class ping_result:
+  """
+  Attributes:
+   - success
+  """
+
+  thrift_spec = (
+    (0, TType.BOOL, 'success', None, None, ), # 0
+  )
+
+  def __init__(self, success=None,):
+    self.success = success
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 0:
+        if ftype == TType.BOOL:
+          self.success = iprot.readBool();
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('ping_result')
+    if self.success != None:
+      oprot.writeFieldBegin('success', TType.BOOL, 0)
+      oprot.writeBool(self.success)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+    def validate(self):
+      return
+
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class getID_args:
 
   thrift_spec = (
   )
@@ -574,7 +688,65 @@ class ping_result:
     if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
-    oprot.writeStructBegin('ping_result')
+    oprot.writeStructBegin('getID_args')
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+    def validate(self):
+      return
+
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class getID_result:
+  """
+  Attributes:
+   - success
+  """
+
+  thrift_spec = (
+    (0, TType.STRING, 'success', None, None, ), # 0
+  )
+
+  def __init__(self, success=None,):
+    self.success = success
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 0:
+        if ftype == TType.STRING:
+          self.success = iprot.readString();
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('getID_result')
+    if self.success != None:
+      oprot.writeFieldBegin('success', TType.STRING, 0)
+      oprot.writeString(self.success)
+      oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
     def validate(self):
@@ -674,7 +846,7 @@ class shutdown_args:
   def __ne__(self, other):
     return not (self == other)
 
-class get_all_tasks_args:
+class getAllTasks_args:
 
   thrift_spec = (
   )
@@ -697,7 +869,7 @@ class get_all_tasks_args:
     if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
-    oprot.writeStructBegin('get_all_tasks_args')
+    oprot.writeStructBegin('getAllTasks_args')
     oprot.writeFieldStop()
     oprot.writeStructEnd()
     def validate(self):
@@ -715,7 +887,7 @@ class get_all_tasks_args:
   def __ne__(self, other):
     return not (self == other)
 
-class get_all_tasks_result:
+class getAllTasks_result:
   """
   Attributes:
    - success
@@ -756,7 +928,7 @@ class get_all_tasks_result:
     if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
-    oprot.writeStructBegin('get_all_tasks_result')
+    oprot.writeStructBegin('getAllTasks_result')
     if self.success != None:
       oprot.writeFieldBegin('success', TType.LIST, 0)
       oprot.writeListBegin(TType.I32, len(self.success))
@@ -781,7 +953,7 @@ class get_all_tasks_result:
   def __ne__(self, other):
     return not (self == other)
 
-class get_task_args:
+class getTask_args:
   """
   Attributes:
    - task_id
@@ -818,7 +990,7 @@ class get_task_args:
     if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
-    oprot.writeStructBegin('get_task_args')
+    oprot.writeStructBegin('getTask_args')
     if self.task_id != None:
       oprot.writeFieldBegin('task_id', TType.STRING, 1)
       oprot.writeString(self.task_id)
@@ -840,7 +1012,7 @@ class get_task_args:
   def __ne__(self, other):
     return not (self == other)
 
-class get_task_result:
+class getTask_result:
   """
   Attributes:
    - success
@@ -885,7 +1057,7 @@ class get_task_result:
     if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
-    oprot.writeStructBegin('get_task_result')
+    oprot.writeStructBegin('getTask_result')
     if self.success != None:
       oprot.writeFieldBegin('success', TType.I32, 0)
       oprot.writeI32(self.success)
@@ -911,7 +1083,7 @@ class get_task_result:
   def __ne__(self, other):
     return not (self == other)
 
-class abort_task_args:
+class abortTask_args:
   """
   Attributes:
    - task_id
@@ -948,7 +1120,7 @@ class abort_task_args:
     if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
-    oprot.writeStructBegin('abort_task_args')
+    oprot.writeStructBegin('abortTask_args')
     if self.task_id != None:
       oprot.writeFieldBegin('task_id', TType.STRING, 1)
       oprot.writeString(self.task_id)
@@ -970,7 +1142,7 @@ class abort_task_args:
   def __ne__(self, other):
     return not (self == other)
 
-class abort_task_result:
+class abortTask_result:
   """
   Attributes:
    - invalid_task
@@ -1017,7 +1189,7 @@ class abort_task_result:
     if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
-    oprot.writeStructBegin('abort_task_result')
+    oprot.writeStructBegin('abortTask_result')
     if self.invalid_task != None:
       oprot.writeFieldBegin('invalid_task', TType.STRUCT, 1)
       self.invalid_task.write(oprot)
@@ -1043,7 +1215,7 @@ class abort_task_result:
   def __ne__(self, other):
     return not (self == other)
 
-class pause_task_args:
+class pauseTask_args:
   """
   Attributes:
    - task_id
@@ -1080,7 +1252,7 @@ class pause_task_args:
     if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
-    oprot.writeStructBegin('pause_task_args')
+    oprot.writeStructBegin('pauseTask_args')
     if self.task_id != None:
       oprot.writeFieldBegin('task_id', TType.STRING, 1)
       oprot.writeString(self.task_id)
@@ -1102,7 +1274,7 @@ class pause_task_args:
   def __ne__(self, other):
     return not (self == other)
 
-class pause_task_result:
+class pauseTask_result:
   """
   Attributes:
    - success
@@ -1156,7 +1328,7 @@ class pause_task_result:
     if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
-    oprot.writeStructBegin('pause_task_result')
+    oprot.writeStructBegin('pauseTask_result')
     if self.success != None:
       oprot.writeFieldBegin('success', TType.BOOL, 0)
       oprot.writeBool(self.success)
@@ -1186,7 +1358,7 @@ class pause_task_result:
   def __ne__(self, other):
     return not (self == other)
 
-class resume_task_args:
+class resumeTask_args:
   """
   Attributes:
    - task_id
@@ -1223,7 +1395,7 @@ class resume_task_args:
     if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
-    oprot.writeStructBegin('resume_task_args')
+    oprot.writeStructBegin('resumeTask_args')
     if self.task_id != None:
       oprot.writeFieldBegin('task_id', TType.STRING, 1)
       oprot.writeString(self.task_id)
@@ -1245,7 +1417,7 @@ class resume_task_args:
   def __ne__(self, other):
     return not (self == other)
 
-class resume_task_result:
+class resumeTask_result:
   """
   Attributes:
    - success
@@ -1299,7 +1471,7 @@ class resume_task_result:
     if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
-    oprot.writeStructBegin('resume_task_result')
+    oprot.writeStructBegin('resumeTask_result')
     if self.success != None:
       oprot.writeFieldBegin('success', TType.BOOL, 0)
       oprot.writeBool(self.success)

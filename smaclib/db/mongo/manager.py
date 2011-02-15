@@ -95,6 +95,9 @@ class QuerySet(object):
         self.wrapper = wrapper
         self.current = 0
 
+    def __len__(self):
+        return len(self.result)
+
     def __iter__(self):
         return QueryIterator(self)
 

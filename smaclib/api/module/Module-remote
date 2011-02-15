@@ -21,14 +21,15 @@ if len(sys.argv) <= 1 or sys.argv[1] == '--help':
   print 'Usage: ' + sys.argv[0] + ' [-h host:port] [-u url] [-f[ramed]] function [arg1 [arg2...]]'
   print ''
   print 'Functions:'
-  print '  void ping()'
+  print '  bool ping()'
+  print '  ModuleID getID()'
   print '  void restart()'
   print '  void shutdown()'
-  print '   get_all_tasks()'
-  print '  TaskStatus get_task(TaskID task_id)'
-  print '  void abort_task(TaskID task_id)'
-  print '  bool pause_task(TaskID task_id)'
-  print '  bool resume_task(TaskID task_id)'
+  print '   getAllTasks()'
+  print '  TaskStatus getTask(TaskID task_id)'
+  print '  void abortTask(TaskID task_id)'
+  print '  bool pauseTask(TaskID task_id)'
+  print '  bool resumeTask(TaskID task_id)'
   print ''
   sys.exit(0)
 
@@ -85,6 +86,12 @@ if cmd == 'ping':
     sys.exit(1)
   pp.pprint(client.ping())
 
+elif cmd == 'getID':
+  if len(args) != 0:
+    print 'getID requires 0 args'
+    sys.exit(1)
+  pp.pprint(client.getID())
+
 elif cmd == 'restart':
   if len(args) != 0:
     print 'restart requires 0 args'
@@ -97,35 +104,35 @@ elif cmd == 'shutdown':
     sys.exit(1)
   pp.pprint(client.shutdown())
 
-elif cmd == 'get_all_tasks':
+elif cmd == 'getAllTasks':
   if len(args) != 0:
-    print 'get_all_tasks requires 0 args'
+    print 'getAllTasks requires 0 args'
     sys.exit(1)
-  pp.pprint(client.get_all_tasks())
+  pp.pprint(client.getAllTasks())
 
-elif cmd == 'get_task':
+elif cmd == 'getTask':
   if len(args) != 1:
-    print 'get_task requires 1 args'
+    print 'getTask requires 1 args'
     sys.exit(1)
-  pp.pprint(client.get_task(eval(args[0]),))
+  pp.pprint(client.getTask(eval(args[0]),))
 
-elif cmd == 'abort_task':
+elif cmd == 'abortTask':
   if len(args) != 1:
-    print 'abort_task requires 1 args'
+    print 'abortTask requires 1 args'
     sys.exit(1)
-  pp.pprint(client.abort_task(eval(args[0]),))
+  pp.pprint(client.abortTask(eval(args[0]),))
 
-elif cmd == 'pause_task':
+elif cmd == 'pauseTask':
   if len(args) != 1:
-    print 'pause_task requires 1 args'
+    print 'pauseTask requires 1 args'
     sys.exit(1)
-  pp.pprint(client.pause_task(eval(args[0]),))
+  pp.pprint(client.pauseTask(eval(args[0]),))
 
-elif cmd == 'resume_task':
+elif cmd == 'resumeTask':
   if len(args) != 1:
-    print 'resume_task requires 1 args'
+    print 'resumeTask requires 1 args'
     sys.exit(1)
-  pp.pprint(client.resume_task(eval(args[0]),))
+  pp.pprint(client.resumeTask(eval(args[0]),))
 
 else:
   print 'Unrecognized method %s' % cmd

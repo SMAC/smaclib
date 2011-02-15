@@ -19,3 +19,10 @@ def camelcase_to_uppercase(string):
     """
     return camelcase_to_underscore(string).upper()
 
+
+def camelcase_to_dashed(string):
+    """
+    Converts string from CamelCase to camel-case. 
+    """
+    return re.sub('([a-z0-9])([A-Z])', r'\1-\2', string).lower()
+

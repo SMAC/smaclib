@@ -15,23 +15,26 @@ except:
 
 
 class TaskStatus:
-  RUNNING = 0
-  PAUSED = 1
-  COMPLETED = 2
-  FAILED = 3
+  WAITING = 0
+  RUNNING = 1
+  PAUSED = 2
+  COMPLETED = 3
+  FAILED = 4
 
   _VALUES_TO_NAMES = {
-    0: "RUNNING",
-    1: "PAUSED",
-    2: "COMPLETED",
-    3: "FAILED",
+    0: "WAITING",
+    1: "RUNNING",
+    2: "PAUSED",
+    3: "COMPLETED",
+    4: "FAILED",
   }
 
   _NAMES_TO_VALUES = {
-    "RUNNING": 0,
-    "PAUSED": 1,
-    "COMPLETED": 2,
-    "FAILED": 3,
+    "WAITING": 0,
+    "RUNNING": 1,
+    "PAUSED": 2,
+    "COMPLETED": 3,
+    "FAILED": 4,
   }
 
 
@@ -39,18 +42,15 @@ class FileInfo:
   """
   Attributes:
    - mimetype
-   - checksum
   """
 
   thrift_spec = (
     None, # 0
     (1, TType.STRING, 'mimetype', None, None, ), # 1
-    (2, TType.STRING, 'checksum', None, None, ), # 2
   )
 
-  def __init__(self, mimetype=None, checksum=None,):
+  def __init__(self, mimetype=None,):
     self.mimetype = mimetype
-    self.checksum = checksum
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -66,11 +66,6 @@ class FileInfo:
           self.mimetype = iprot.readString();
         else:
           iprot.skip(ftype)
-      elif fid == 2:
-        if ftype == TType.STRING:
-          self.checksum = iprot.readString();
-        else:
-          iprot.skip(ftype)
       else:
         iprot.skip(ftype)
       iprot.readFieldEnd()
@@ -84,10 +79,6 @@ class FileInfo:
     if self.mimetype != None:
       oprot.writeFieldBegin('mimetype', TType.STRING, 1)
       oprot.writeString(self.mimetype)
-      oprot.writeFieldEnd()
-    if self.checksum != None:
-      oprot.writeFieldBegin('checksum', TType.STRING, 2)
-      oprot.writeString(self.checksum)
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()

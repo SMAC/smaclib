@@ -50,8 +50,7 @@ class Iface(smaclib.api.module.Module.Iface):
     Archives (and thus confirms) a successfull upload.
 
     The file_info struct has to contain at least the values for the mime
-    type and, if validation is desired, the sha1 checksum of the
-    transferred asset.
+    type and any additional metadata as required by the implementation.
 
     Parameters:
      - talk_id
@@ -71,9 +70,31 @@ class Iface(smaclib.api.module.Module.Iface):
     The video and audio bitrates can be a name of a preset to use (such as
     default, speaker, slide,..) or a literal value (such as 64k, 150k,...).
 
+    @TODO: Merge this method into the convert_asset method and automatically
+           resolve to this one.
+
     Parameters:
      - video_id
      - encoding_info
+    """
+    pass
+
+  def convert_asset(document_id, mimetype, conversion_info):
+    """
+    Converts a document from its original format to the format implied by
+    the given mimetype.
+
+    This method should be general enough to be able to convert between
+    arbitrary tuples of formats, as implemented by the underlying module.
+
+    The conversion_info dictionary contains converter dependent attributes,
+    refer to the actual module implementation for further details about the
+    directives required by each converter.
+
+    Parameters:
+     - document_id
+     - mimetype
+     - conversion_info
     """
     pass
 
@@ -163,8 +184,7 @@ class Client(smaclib.api.module.Module.Client):
     Archives (and thus confirms) a successfull upload.
 
     The file_info struct has to contain at least the values for the mime
-    type and, if validation is desired, the sha1 checksum of the
-    transferred asset.
+    type and any additional metadata as required by the implementation.
 
     Parameters:
      - talk_id
@@ -216,6 +236,9 @@ class Client(smaclib.api.module.Module.Client):
     The video and audio bitrates can be a name of a preset to use (such as
     default, speaker, slide,..) or a literal value (such as 64k, 150k,...).
 
+    @TODO: Merge this method into the convert_asset method and automatically
+           resolve to this one.
+
     Parameters:
      - video_id
      - encoding_info
@@ -249,6 +272,8 @@ class Client(smaclib.api.module.Module.Client):
       return d.callback(result.success)
     if result.asset_err != None:
       return d.errback(result.asset_err)
+    if result.format_err != None:
+      return d.errback(result.format_err)
     if result.mime_err != None:
       return d.errback(result.mime_err)
     if result.encoder_err != None:
@@ -256,6 +281,61 @@ class Client(smaclib.api.module.Module.Client):
     if result.bitrate_err != None:
       return d.errback(result.bitrate_err)
     return d.errback(TApplicationException(TApplicationException.MISSING_RESULT, "encode_video failed: unknown result"))
+
+  def convert_asset(self, document_id, mimetype, conversion_info):
+    """
+    Converts a document from its original format to the format implied by
+    the given mimetype.
+
+    This method should be general enough to be able to convert between
+    arbitrary tuples of formats, as implemented by the underlying module.
+
+    The conversion_info dictionary contains converter dependent attributes,
+    refer to the actual module implementation for further details about the
+    directives required by each converter.
+
+    Parameters:
+     - document_id
+     - mimetype
+     - conversion_info
+    """
+    self._seqid += 1
+    d = self._reqs[self._seqid] = defer.Deferred()
+    self.send_convert_asset(document_id, mimetype, conversion_info)
+    return d
+
+  def send_convert_asset(self, document_id, mimetype, conversion_info):
+    oprot = self._oprot_factory.getProtocol(self._transport)
+    oprot.writeMessageBegin('convert_asset', TMessageType.CALL, self._seqid)
+    args = convert_asset_args()
+    args.document_id = document_id
+    args.mimetype = mimetype
+    args.conversion_info = conversion_info
+    args.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def recv_convert_asset(self, iprot, mtype, rseqid):
+    d = self._reqs.pop(rseqid)
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(iprot)
+      iprot.readMessageEnd()
+      return d.errback(x)
+    result = convert_asset_result()
+    result.read(iprot)
+    iprot.readMessageEnd()
+    if result.success != None:
+      return d.callback(result.success)
+    if result.asset_err != None:
+      return d.errback(result.asset_err)
+    if result.info_err != None:
+      return d.errback(result.info_err)
+    if result.converter_err != None:
+      return d.errback(result.converter_err)
+    if result.mime_err != None:
+      return d.errback(result.mime_err)
+    return d.errback(TApplicationException(TApplicationException.MISSING_RESULT, "convert_asset failed: unknown result"))
 
 
 class Processor(smaclib.api.module.Module.Processor, TProcessor):
@@ -267,6 +347,7 @@ class Processor(smaclib.api.module.Module.Processor, TProcessor):
     self._processMap["abort_upload"] = Processor.process_abort_upload
     self._processMap["archive_upload"] = Processor.process_archive_upload
     self._processMap["encode_video"] = Processor.process_encode_video
+    self._processMap["convert_asset"] = Processor.process_convert_asset
 
   def process(self, iprot, oprot):
     (name, type, seqid) = iprot.readMessageBegin()
@@ -365,6 +446,8 @@ class Processor(smaclib.api.module.Module.Processor, TProcessor):
       error.raiseException()
     except smaclib.api.errors.ttypes.AssetNotFound, asset_err:
       result.asset_err = asset_err
+    except smaclib.api.errors.ttypes.InvalidFormat, format_err:
+      result.format_err = format_err
     except smaclib.api.errors.ttypes.UnknownMimetype, mime_err:
       result.mime_err = mime_err
     except smaclib.api.errors.ttypes.NoSuitableEncoder, encoder_err:
@@ -372,6 +455,39 @@ class Processor(smaclib.api.module.Module.Processor, TProcessor):
     except smaclib.api.errors.ttypes.InvalidBitrate, bitrate_err:
       result.bitrate_err = bitrate_err
     oprot.writeMessageBegin("encode_video", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def process_convert_asset(self, seqid, iprot, oprot):
+    args = convert_asset_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = convert_asset_result()
+    d = defer.maybeDeferred(self._handler.convert_asset, args.document_id, args.mimetype, args.conversion_info)
+    d.addCallback(self.write_results_success_convert_asset, result, seqid, oprot)
+    d.addErrback(self.write_results_exception_convert_asset, result, seqid, oprot)
+    return d
+
+  def write_results_success_convert_asset(self, success, result, seqid, oprot):
+    result.success = success
+    oprot.writeMessageBegin("convert_asset", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def write_results_exception_convert_asset(self, error, result, seqid, oprot):
+    try:
+      error.raiseException()
+    except smaclib.api.errors.ttypes.AssetNotFound, asset_err:
+      result.asset_err = asset_err
+    except smaclib.api.errors.ttypes.InvalidConversionInfo, info_err:
+      result.info_err = info_err
+    except smaclib.api.errors.ttypes.UnsupportedConversion, converter_err:
+      result.converter_err = converter_err
+    except smaclib.api.errors.ttypes.UnknownMimetype, mime_err:
+      result.mime_err = mime_err
+    oprot.writeMessageBegin("convert_asset", TMessageType.REPLY, seqid)
     result.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
@@ -823,6 +939,7 @@ class encode_video_result:
   Attributes:
    - success
    - asset_err
+   - format_err
    - mime_err
    - encoder_err
    - bitrate_err
@@ -831,14 +948,16 @@ class encode_video_result:
   thrift_spec = (
     (0, TType.STRING, 'success', None, None, ), # 0
     (1, TType.STRUCT, 'asset_err', (smaclib.api.errors.ttypes.AssetNotFound, smaclib.api.errors.ttypes.AssetNotFound.thrift_spec), None, ), # 1
-    (2, TType.STRUCT, 'mime_err', (smaclib.api.errors.ttypes.UnknownMimetype, smaclib.api.errors.ttypes.UnknownMimetype.thrift_spec), None, ), # 2
-    (3, TType.STRUCT, 'encoder_err', (smaclib.api.errors.ttypes.NoSuitableEncoder, smaclib.api.errors.ttypes.NoSuitableEncoder.thrift_spec), None, ), # 3
-    (4, TType.STRUCT, 'bitrate_err', (smaclib.api.errors.ttypes.InvalidBitrate, smaclib.api.errors.ttypes.InvalidBitrate.thrift_spec), None, ), # 4
+    (2, TType.STRUCT, 'format_err', (smaclib.api.errors.ttypes.InvalidFormat, smaclib.api.errors.ttypes.InvalidFormat.thrift_spec), None, ), # 2
+    (3, TType.STRUCT, 'mime_err', (smaclib.api.errors.ttypes.UnknownMimetype, smaclib.api.errors.ttypes.UnknownMimetype.thrift_spec), None, ), # 3
+    (4, TType.STRUCT, 'encoder_err', (smaclib.api.errors.ttypes.NoSuitableEncoder, smaclib.api.errors.ttypes.NoSuitableEncoder.thrift_spec), None, ), # 4
+    (5, TType.STRUCT, 'bitrate_err', (smaclib.api.errors.ttypes.InvalidBitrate, smaclib.api.errors.ttypes.InvalidBitrate.thrift_spec), None, ), # 5
   )
 
-  def __init__(self, success=None, asset_err=None, mime_err=None, encoder_err=None, bitrate_err=None,):
+  def __init__(self, success=None, asset_err=None, format_err=None, mime_err=None, encoder_err=None, bitrate_err=None,):
     self.success = success
     self.asset_err = asset_err
+    self.format_err = format_err
     self.mime_err = mime_err
     self.encoder_err = encoder_err
     self.bitrate_err = bitrate_err
@@ -865,17 +984,23 @@ class encode_video_result:
           iprot.skip(ftype)
       elif fid == 2:
         if ftype == TType.STRUCT:
+          self.format_err = smaclib.api.errors.ttypes.InvalidFormat()
+          self.format_err.read(iprot)
+        else:
+          iprot.skip(ftype)
+      elif fid == 3:
+        if ftype == TType.STRUCT:
           self.mime_err = smaclib.api.errors.ttypes.UnknownMimetype()
           self.mime_err.read(iprot)
         else:
           iprot.skip(ftype)
-      elif fid == 3:
+      elif fid == 4:
         if ftype == TType.STRUCT:
           self.encoder_err = smaclib.api.errors.ttypes.NoSuitableEncoder()
           self.encoder_err.read(iprot)
         else:
           iprot.skip(ftype)
-      elif fid == 4:
+      elif fid == 5:
         if ftype == TType.STRUCT:
           self.bitrate_err = smaclib.api.errors.ttypes.InvalidBitrate()
           self.bitrate_err.read(iprot)
@@ -899,17 +1024,224 @@ class encode_video_result:
       oprot.writeFieldBegin('asset_err', TType.STRUCT, 1)
       self.asset_err.write(oprot)
       oprot.writeFieldEnd()
+    if self.format_err != None:
+      oprot.writeFieldBegin('format_err', TType.STRUCT, 2)
+      self.format_err.write(oprot)
+      oprot.writeFieldEnd()
     if self.mime_err != None:
-      oprot.writeFieldBegin('mime_err', TType.STRUCT, 2)
+      oprot.writeFieldBegin('mime_err', TType.STRUCT, 3)
       self.mime_err.write(oprot)
       oprot.writeFieldEnd()
     if self.encoder_err != None:
-      oprot.writeFieldBegin('encoder_err', TType.STRUCT, 3)
+      oprot.writeFieldBegin('encoder_err', TType.STRUCT, 4)
       self.encoder_err.write(oprot)
       oprot.writeFieldEnd()
     if self.bitrate_err != None:
-      oprot.writeFieldBegin('bitrate_err', TType.STRUCT, 4)
+      oprot.writeFieldBegin('bitrate_err', TType.STRUCT, 5)
       self.bitrate_err.write(oprot)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+    def validate(self):
+      return
+
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class convert_asset_args:
+  """
+  Attributes:
+   - document_id
+   - mimetype
+   - conversion_info
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRING, 'document_id', None, None, ), # 1
+    (2, TType.STRING, 'mimetype', None, None, ), # 2
+    (3, TType.MAP, 'conversion_info', (TType.STRING,None,TType.STRING,None), None, ), # 3
+  )
+
+  def __init__(self, document_id=None, mimetype=None, conversion_info=None,):
+    self.document_id = document_id
+    self.mimetype = mimetype
+    self.conversion_info = conversion_info
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.STRING:
+          self.document_id = iprot.readString();
+        else:
+          iprot.skip(ftype)
+      elif fid == 2:
+        if ftype == TType.STRING:
+          self.mimetype = iprot.readString();
+        else:
+          iprot.skip(ftype)
+      elif fid == 3:
+        if ftype == TType.MAP:
+          self.conversion_info = {}
+          (_ktype1, _vtype2, _size0 ) = iprot.readMapBegin() 
+          for _i4 in xrange(_size0):
+            _key5 = iprot.readString();
+            _val6 = iprot.readString();
+            self.conversion_info[_key5] = _val6
+          iprot.readMapEnd()
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('convert_asset_args')
+    if self.document_id != None:
+      oprot.writeFieldBegin('document_id', TType.STRING, 1)
+      oprot.writeString(self.document_id)
+      oprot.writeFieldEnd()
+    if self.mimetype != None:
+      oprot.writeFieldBegin('mimetype', TType.STRING, 2)
+      oprot.writeString(self.mimetype)
+      oprot.writeFieldEnd()
+    if self.conversion_info != None:
+      oprot.writeFieldBegin('conversion_info', TType.MAP, 3)
+      oprot.writeMapBegin(TType.STRING, TType.STRING, len(self.conversion_info))
+      for kiter7,viter8 in self.conversion_info.items():
+        oprot.writeString(kiter7)
+        oprot.writeString(viter8)
+      oprot.writeMapEnd()
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+    def validate(self):
+      return
+
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class convert_asset_result:
+  """
+  Attributes:
+   - success
+   - asset_err
+   - info_err
+   - converter_err
+   - mime_err
+  """
+
+  thrift_spec = (
+    (0, TType.STRING, 'success', None, None, ), # 0
+    (1, TType.STRUCT, 'asset_err', (smaclib.api.errors.ttypes.AssetNotFound, smaclib.api.errors.ttypes.AssetNotFound.thrift_spec), None, ), # 1
+    (2, TType.STRUCT, 'info_err', (smaclib.api.errors.ttypes.InvalidConversionInfo, smaclib.api.errors.ttypes.InvalidConversionInfo.thrift_spec), None, ), # 2
+    (3, TType.STRUCT, 'mime_err', (smaclib.api.errors.ttypes.UnknownMimetype, smaclib.api.errors.ttypes.UnknownMimetype.thrift_spec), None, ), # 3
+    (4, TType.STRUCT, 'converter_err', (smaclib.api.errors.ttypes.UnsupportedConversion, smaclib.api.errors.ttypes.UnsupportedConversion.thrift_spec), None, ), # 4
+  )
+
+  def __init__(self, success=None, asset_err=None, info_err=None, converter_err=None, mime_err=None,):
+    self.success = success
+    self.asset_err = asset_err
+    self.info_err = info_err
+    self.converter_err = converter_err
+    self.mime_err = mime_err
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 0:
+        if ftype == TType.STRING:
+          self.success = iprot.readString();
+        else:
+          iprot.skip(ftype)
+      elif fid == 1:
+        if ftype == TType.STRUCT:
+          self.asset_err = smaclib.api.errors.ttypes.AssetNotFound()
+          self.asset_err.read(iprot)
+        else:
+          iprot.skip(ftype)
+      elif fid == 2:
+        if ftype == TType.STRUCT:
+          self.info_err = smaclib.api.errors.ttypes.InvalidConversionInfo()
+          self.info_err.read(iprot)
+        else:
+          iprot.skip(ftype)
+      elif fid == 4:
+        if ftype == TType.STRUCT:
+          self.converter_err = smaclib.api.errors.ttypes.UnsupportedConversion()
+          self.converter_err.read(iprot)
+        else:
+          iprot.skip(ftype)
+      elif fid == 3:
+        if ftype == TType.STRUCT:
+          self.mime_err = smaclib.api.errors.ttypes.UnknownMimetype()
+          self.mime_err.read(iprot)
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('convert_asset_result')
+    if self.success != None:
+      oprot.writeFieldBegin('success', TType.STRING, 0)
+      oprot.writeString(self.success)
+      oprot.writeFieldEnd()
+    if self.asset_err != None:
+      oprot.writeFieldBegin('asset_err', TType.STRUCT, 1)
+      self.asset_err.write(oprot)
+      oprot.writeFieldEnd()
+    if self.info_err != None:
+      oprot.writeFieldBegin('info_err', TType.STRUCT, 2)
+      self.info_err.write(oprot)
+      oprot.writeFieldEnd()
+    if self.mime_err != None:
+      oprot.writeFieldBegin('mime_err', TType.STRUCT, 3)
+      self.mime_err.write(oprot)
+      oprot.writeFieldEnd()
+    if self.converter_err != None:
+      oprot.writeFieldBegin('converter_err', TType.STRUCT, 4)
+      self.converter_err.write(oprot)
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()

@@ -6,25 +6,18 @@ import os
 import re
 
 from smaclib import tasks
-from smaclib.twisted.internet import utils
+from smaclib import process
 
-from twisted.internet import defer
-from twisted.internet import error
-from twisted.internet import protocol
 from twisted.internet import reactor
 from twisted.python import filepath
 
+from zope.interface import implements
 
-class EncoderProtocol(protocol.ProcessProtocol):
+
+class EncoderProtocol(process.DeferredProcessProtocol):
     def __init__(self, encoder):
-        self.encoder = encoder
-        self.task = tasks.Task("Video encoding", self.abort)
+        super(EncoderProtocol, self).__init__("Video encoding", encoder)
         self.duration = None
-        self.cancelled = False
-
-    def abort(self, task):
-        self.cancelled = True
-        self.transport.signalProcess('KILL')
 
     def get_time(self, pattern, data, default=0):
         match = re.search(pattern, data)
@@ -37,25 +30,17 @@ class EncoderProtocol(protocol.ProcessProtocol):
 
         return sum(int(groups[i]) * 60 ** (exp - i) for i in range(exp + 1))
 
-    def errReceived(self, data):
+    def errLineReceived(self, data):
         # Search for the duration or time string.
         # Discard the milliseconds as we don't need such precision.
         duration_pattern = r'Duration: (\d\d):(\d\d):(\d\d).\d\d'
         time_pattern = r' time=(\d\d:(\d\d:(\d\d:)?)?)?(\d?\d).\d\d'
-        
+
         if self.duration is None:
             self.duration = self.get_time(duration_pattern, data, None)
         else:
             time = self.get_time(time_pattern, data)
-
-            self.task.completed =  1. / self.duration * time * 100
-
-    def processEnded(self, status):
-        if self.cancelled:
-            status.trap(error.ProcessTerminated)
-        else:
-            status.trap(error.ProcessDone)
-            self.task.callback(self.encoder)
+            self.task.completed =  1. / self.duration * time
 
 
 class FFmpegEncoder(object):
@@ -63,101 +48,103 @@ class FFmpegEncoder(object):
     A wrapper for the ffmpeg command line utility.
     """
 
-    def __init__(self, bin='/usr/local/bin/ffmpeg'):
-        self.bin = bin
+    implements(tasks.ITaskRunner)
+
+    def __init__(self, source, video_bitrate, audio_bitrate, sampling_rate):
+        self.source = source
         self.codecs = {}
-        self.destination = ''
-        self.arguments = []
+        
+        self.video_bitrate = video_bitrate
+        self.audio_bitrate = audio_bitrate
+        self.sampling_rate = sampling_rate
+        
+        self.process = EncoderProtocol(self)
 
-    def write_to(self, destination):
-        self.destination = destination
-        return self
+    def getTask(self):
+        return self.process.task
 
-    def read_from(self, source):
-        return self.option('i', source)
+    def start(self):
+        bin = 'ffmpeg'
 
-    def flag(self, name):
-        self.arguments += ['-' + name]
-        return self
+        self.target = os.path.splitext(self.source.basename())[0] + ".flv"
+        self.target = self.source.parent().child(self.target)
 
-    def option(self, name, value):
-        self.arguments += ['-' + name, value]
-        return self
+        args = [
+            '-y',
+            '-i', self.source.path,
+            '-vb', self.video_bitrate,
+            '-ab', self.audio_bitrate,
+            '-ar', self.sampling_rate,
+            self.target.path,
+        ]
 
-    def encode(self):
-        process = EncoderProtocol(self)
-        reactor.spawnProcess(process, self.bin, self._command, env=os.environ)
-        process.task.addErrback(self._cleanup)
-        return process.task
+        reactor.spawnProcess(self.process, bin, [bin] + args, env=os.environ)
+        self.process.task.addErrback(self.cleanup)
 
-    def _cleanup(self, failure):
+    def cleanup(self, failure):
         filepath.FilePath(self.destination).remove()
         return failure
 
-    @property
-    def _command(self):
-        return [self.bin] + self.arguments + [self.destination]
+    #def can_encode(self, extension):
+    #    # TODO: Find the right way to convert between guessed file extension
+    #    #       and ffmpeg format, as this one is not the right one... ;-)
+    #    # NEWS: Uses now the formats argument instead of the codecs ons...
+    #    #       maybe this is the right one.
+    #    try:
+    #        return 'E' in self.codecs[extension.lstrip('.')][0]
+    #    except KeyError:
+    #        return False
 
-    def can_encode(self, extension):
-        # TODO: Find the right way to convert between guessed file extension
-        #       and ffmpeg format, as this one is not the right one... ;-)
-        # NEWS: Uses now the formats argument instead of the codecs ons...
-        #       maybe this is the right one.
-        try:
-            return 'E' in self.codecs[extension.lstrip('.')][0]
-        except KeyError:
-            return False
+    #def can_decode(self, extension):
+    #    # TODO: Find the right way to convert between guessed file extension
+    #    #       and ffmpeg format, as this one is not the right one... ;-)
+    #    # NEWS: Uses now the formats argument instead of the codecs ons...
+    #    #       maybe this is the right one.
+    #    try:
+    #        return 'D' in self.codecs[extension.lstrip('.')][0]
+    #    except KeyError:
+    #        return False
 
-    def can_decode(self, extension):
-        # TODO: Find the right way to convert between guessed file extension
-        #       and ffmpeg format, as this one is not the right one... ;-)
-        # NEWS: Uses now the formats argument instead of the codecs ons...
-        #       maybe this is the right one.
-        try:
-            return 'D' in self.codecs[extension.lstrip('.')][0]
-        except KeyError:
-            return False
+    #def validate_bitrate(self, value):
+    #    """
+    #    Simplistic bitrate validation. Only checks that the given value is
+    #    composed by digits and ends with a 'k'.
+    #    """
+    #    # TODO: Enfore a more strict check (min/max bitrates, allowed values
+    #    #       only,...)
+    #    return re.match(r'\d+k$', value) is not None
 
-    def validate_bitrate(self, value):
-        """
-        Simplistic bitrate validation. Only checks that the given value is
-        composed by digits and ends with a 'k'.
-        """
-        # TODO: Enfore a more strict check (min/max bitrates, allowed values
-        #       only,...)
-        return re.match(r'\d+k$', value) is not None
+    #@defer.inlineCallbacks
+    #def init(self):
+    #    self.codecs = yield self._get_codecs()
 
-    @defer.inlineCallbacks
-    def init(self):
-        self.codecs = yield self._get_codecs()
-
-    @defer.inlineCallbacks
-    def _get_codecs(self):
-        out = yield utils.get_process_output(self.bin, ['-formats'], errortoo=False)
-
-        try:
-            out = out.split(' --\n', 1)[1].strip()
-        except IndexError:
-            # Something went wrong while capturing the output
-            defer.returnValue({})
-
-        codecs = {}
-
-        for codec in out.splitlines():
-            if not codec:
-                continue
-
-            flags = codec[:4]
-            flags = list(flags.replace(' ', ''))
-
-            try:
-                extension, name = codec[4:].strip().split(' ', 1)
-                name = name.strip()
-            except IndexError:
-                # Something went wrong while capturing the output
-                continue
-
-            for ext in extension.split(','):
-                codecs[ext] = flags, name
-
-        defer.returnValue(codecs)
+    #@defer.inlineCallbacks
+    #def _get_codecs(self):
+    #    out = yield utils.get_process_output(self.bin, ['-formats'], errortoo=False)
+    #
+    #    try:
+    #        out = out.split(' --\n', 1)[1].strip()
+    #    except IndexError:
+    #        # Something went wrong while capturing the output
+    #        defer.returnValue({})
+    #
+    #    codecs = {}
+    #
+    #    for codec in out.splitlines():
+    #        if not codec:
+    #            continue
+    #
+    #        flags = codec[:4]
+    #        flags = list(flags.replace(' ', ''))
+    #
+    #        try:
+    #            extension, name = codec[4:].strip().split(' ', 1)
+    #            name = name.strip()
+    #        except IndexError:
+    #            # Something went wrong while capturing the output
+    #            continue
+    #
+    #        for ext in extension.split(','):
+    #            codecs[ext] = flags, name
+    #
+    #    defer.returnValue(codecs)

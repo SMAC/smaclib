@@ -46,7 +46,10 @@ class TransfersRegister(object):
         """
         if name is None:
             name = str(uuid.uuid4())
-        self.uploads_root.child(name).makedirs()
+        try:
+            self.uploads_root.child(name).makedirs()
+        except:
+            pass
         return name
 
     def deallocate_upload_slot(self, name):
@@ -67,14 +70,15 @@ class TransfersRegister(object):
         # Now move the uploaded file to its final destination, but in a new
         # thread to prevent rename operations between different disks to block
         # the reactor.
-        # @TODO: The blocking behavior refers to windows based operating
+        # TODO: The blocking behavior refers to windows based operating
         # systems, but there is a comment in twisted/python/filepath.py:926
         # indicating that such a behavior is not supported on linux hosts.
         # Investigate and provide a correct solution if needed.
         # Anyway, the two directories (uploads_root and completed_root)
         # should really be on the same file system.
-        destination = self.completed_root.child(avatar_id)
-        d = threads.deferToThread(os.rename, filename.path, destination.path)
+        extension = filename.splitext()[1]
+        destination = self.completed_root.child(avatar_id).path + extension
+        d = threads.deferToThread(os.rename, filename.path, destination)
 
         # Deallocate the slot once the transfer is completed
         d.addCallback(lambda _: self.deallocate_upload_slot(avatar_id))

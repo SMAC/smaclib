@@ -9,6 +9,9 @@ from smaclib.conf import settings
 from smaclib.cred import checkers
 from smaclib.twisted.plugins import module
 
+from smaclib.services import converter
+
+
 
 class ArchiverMaker(module.ModuleMaker):
     tapname = "smac-archiver"
@@ -34,18 +37,27 @@ class ArchiverMaker(module.ModuleMaker):
         
         ##
         
-        from twisted.internet import ssl
-        context = ssl.DefaultOpenSSLContextFactory(
-            '/Users/garetjax/smac/temp/archiver/keys/server.key',
-            '/Users/garetjax/smac/temp/archiver/keys/server.crt',
-        )
-        
+        #from twisted.internet import ssl
+        #context = ssl.DefaultOpenSSLContextFactory(
+        #    settings.server_key,
+        #    settings.server_crt
+        #)
+        #
+        #ftp_service = internet.SSLServer(settings.ftp_server_port,
+        #                                 ftp.FTPFactory(transfer_portal),
+        #                                 context,
+        #                                 interface=settings.ftp_server_ip)
         ##
-
-        ftp_service = internet.SSLServer(settings.ftp_server_port,
+        
+        conv_service = converter.ConversionService(settings.conv_server_port,
+                                          interface=settings.conv_server_ip)
+        conv_service.setServiceParent(module_service)
+        
+        ftp_service = internet.TCPServer(settings.ftp_server_port,
                                          ftp.FTPFactory(transfer_portal),
-                                         context,
                                          interface=settings.ftp_server_ip)
+
+                                        
         ftp_service.setServiceParent(module_service)
 
         return module_service

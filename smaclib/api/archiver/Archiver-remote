@@ -23,8 +23,9 @@ if len(sys.argv) <= 1 or sys.argv[1] == '--help':
   print 'Functions:'
   print '  URI request_upload_slot()'
   print '  void abort_upload(UploadID upload_id)'
-  print '  AssetID archive_upload(TalkID talk_id, UploadID upload_id, FileInfo file_info)'
-  print '  TaskID encode_video(AssetID video_id, EncodingInfo encoding_info)'
+  print '  VersionID archive_upload(TalkID talk_id, UploadID upload_id, FileInfo file_info)'
+  print '  TaskID encode_video(VersionID video_id, EncodingInfo encoding_info)'
+  print '  TaskID convert_asset(VersionID document_id, Mimetype mimetype,  conversion_info)'
   print ''
   sys.exit(0)
 
@@ -98,6 +99,12 @@ elif cmd == 'encode_video':
     print 'encode_video requires 2 args'
     sys.exit(1)
   pp.pprint(client.encode_video(eval(args[0]),eval(args[1]),))
+
+elif cmd == 'convert_asset':
+  if len(args) != 3:
+    print 'convert_asset requires 3 args'
+    sys.exit(1)
+  pp.pprint(client.convert_asset(eval(args[0]),eval(args[1]),eval(args[2]),))
 
 else:
   print 'Unrecognized method %s' % cmd

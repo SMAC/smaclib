@@ -1,7 +1,7 @@
 
-import mimetypes
 
 from smaclib import brokers
+from smaclib import routers
 from smaclib.db import mongo
 from smaclib.conf import settings
 
@@ -31,9 +31,6 @@ class ModuleMaker(object):
     def load_settings(self, configfile):
         if configfile:
             settings.load(configfile)
-        
-        mimetypes.init()
-        mimetypes.init(settings.mime_files)
 
     def get_module(self):
         raise NotImplementedError("No module provided")
@@ -57,12 +54,14 @@ class ModuleMaker(object):
             if 'rpc' in settings.rest['expose']:
                 # Publish XML RPC interface
                 path = settings.rest['expose']['rpc']
-                root.putChild(path, brokers.XmlRpcBroker(self.module))
+                root.putChild(path, brokers.XmlRpcBroker(self.module,
+                              router=routers.PrefixRouter('xmlrpc', 'remote')))
         
             if 'soap' in settings.rest['expose']:
                 # Publish the SOAP interface
                 path = settings.rest['expose']['soap']
-                root.putChild(path, brokers.SoapBroker(self.module))
+                root.putChild(path, brokers.SoapBroker(self.module,
+                              router=routers.PrefixRouter('soap', 'remote')))
             
             if settings.rest['ssl']:
                 context = ssl.DefaultOpenSSLContextFactory(
@@ -83,11 +82,12 @@ class ModuleMaker(object):
 
         thrift_service = internet.TCPServer(
             settings.thrift_port,
-            brokers.ThriftBroker(self.module)
+            brokers.ThriftBroker(self.module,
+                                 routers.PrefixRouter('thrift', 'remote'))
         )
         thrift_service.setServiceParent(module_service)
         
-        print "Starting service, my module ID is", self.module.get_id()
+        print "Starting service, my module ID is", self.module.remote_getID()
 
         return module_service
 

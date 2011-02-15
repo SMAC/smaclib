@@ -2,20 +2,21 @@
 
 
 import sys
+import os
 import xmlrpclib
 import ftplib
 import argparse
 import urlparse
 
 
-def upload(module, files):
+def upload(module, files, role):
     uploads = {}
     
     for f in files:
         print "Requesting upload slot for", f.name
         
         try:
-            slot = module.request_upload_slot()
+            slot = module.requestUploadSlot()
         except xmlrpclib.ProtocolError as e:
             print "Could not allocate an upload slot:", e.errcode, e.errmsg
         else:
@@ -25,13 +26,13 @@ def upload(module, files):
             client.login(slot.username, slot.password)
             print "Uploading...",
             sys.stdout.flush()
-            client.storbinary("STOR my_upload", f)
+            client.storbinary("STOR {0}".format(f.name), f)
             client.quit()
             uploads[slot.username] = f.name
             print "OK"
             ##
             print "Archiving"
-            print module.archive_upload("mytalkid", slot.username, {'mimetype': 'video/quicktime'})
+            print module.archiveUpload("mytalkid", slot.username, role)
             
     
     return uploads
@@ -47,6 +48,7 @@ def main():
                                      "to a SMAC archiver.")
     parser.add_argument('module', help="The address of the RPC endpoint of " \
                         "the archiver to which the files shall be uploaded.")
+    parser.add_argument('role', help="The role of the files to upload.")
     parser.add_argument('files', metavar='FILE', type=argparse.FileType('rb'),
                         nargs='+', help="A list of files to upload.")
     parser.add_argument('--version', action='version', version='%(prog)s 0.1')
@@ -59,7 +61,7 @@ def main():
         print "Invalid module address:", args.module
         return 1
     
-    uploads = upload(module, args.files)
+    uploads = upload(module, args.files, args.role)
     
     print
     print "Uploads completed; you can process your files with the following ids:"

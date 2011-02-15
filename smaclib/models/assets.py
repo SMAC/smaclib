@@ -16,6 +16,41 @@ class AssetsManager(mongo.Manager):
     """
 
     @defer.inlineCallbacks
+    def find_type(self, asset_id, mediatype, query=None):
+        """
+        Finds an asset given its ID or the ID of one of its versions for the
+        given mediatype.
+        """
+        query = query or {}
+        object_id = mongo.ObjectId(asset_id)
+        
+        query["$or"] = [
+            {
+                "_id": object_id,
+                "versions.mediatype": mediatype,
+            },
+            {
+                "versions": {
+                    "$elemMatch": {
+                        "version_id": object_id,
+                        "mediatype": mediatype,
+                    }
+                }
+            },
+        ]
+        
+        asset = yield self.one(query)
+        
+        if asset.pk == object_id:
+            # Find the first version with matching mediatype
+            version = asset.get_version(mediatype=mediatype)
+        else:
+            # Find the matching version
+            version = asset.get_version(asset_id)
+
+        defer.returnValue((asset, version))
+
+    @defer.inlineCallbacks
     def find_version(self, version_id, query=None):
         """
         Finds an asset given the ID of one of its versions, optionally
@@ -27,7 +62,7 @@ class AssetsManager(mongo.Manager):
         query = query or {}
         query["versions.version_id"] = mongo.ObjectId(version_id)
 
-        asset = yield self.collection.one(query)
+        asset = yield self.one(query)
         version = asset.get_version(version_id)
 
         defer.returnValue((asset, version))
@@ -44,8 +79,6 @@ class AssetVersion(object):
 
     version_id = fields.ObjectId(required=True)
     filename = fields.FilePath(required=True)
-    mimetype = fields.Mimetype(required=True)
-    archived = fields.Boolean()
 
 
 class Asset(mongo.Document):
@@ -59,19 +92,48 @@ class Asset(mongo.Document):
     __manager__ = AssetsManager
 
     archiver_id = fields.Unicode(default=fields.NO_DEFAULT, required=True)
+    talk_id = fields.Unicode(default=fields.NO_DEFAULT, required=True)
     versions = fields.List(fields.ComplexField(AssetVersion))
-
-    def get_version(self, version_id):
-        """
-        Gets a specific version of this asset given a vesion ID.
-        """
-        version_id = str(version_id)
+    role = fields.Unicode(required=True)
+    
+    @property
+    def filename(self):
+        return self.versions[0].filename
+    
+    @property
+    def original(self):
         for version in self.versions:
-            if str(version.version_id) == version_id:
+            if version.version_id == self.pk:
                 return version
+
+    def get_version(self, version_id=None, mediatype=None):
+        """
+        Gets a specific version of this asset given a version ID and/or
+        mediatype.
+        """
+        if not version_id and not mediatype:
+            raise ValueError("Either provide a version_id or a mediatype.")
+        
+        if version_id:
+            version_id = str(version_id)
+            for version in self.versions:
+                if str(version.version_id) == version_id:
+                    if mediatype:
+                        if mediatype == version.mediatype:
+                            return version
+                        else:
+                            # Version is OK but mediatype no
+                            break
+                    else:
+                        return version
         else:
-            raise Asset.DoesNotExist(Asset, {
-                'versions.version_id': version_id
-            })
+            for version in self.versions:
+                if str(version.mediatype) == mediatype:
+                    return version
+        
+        raise Asset.DoesNotExist(Asset, {
+            'versions.version_id': version_id,
+            'versions.mediatype': mediatype,
+        })
 
 
