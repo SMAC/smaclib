@@ -43,6 +43,14 @@ pre {
     padding: 7px 13px 9px 13px;
 }
 
+.section a tt {
+	color: #004c6c;
+}
+.section a:hover tt {
+	color: #971f00;
+	text-decoration: underline;
+}
+
 div.related:first-child {
     border-bottom: 1px solid #368321;
 }
