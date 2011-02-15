@@ -1,0 +1,116 @@
+diff -cr SOAPpy-0.11.6/SOAPpy/Client.py SOAPpy-0.11.6-original/SOAPpy/Client.py
+*** SOAPpy-0.11.6/SOAPpy/Client.py	Tue Jan 11 21:23:55 2011
+--- SOAPpy-0.11.6-original/SOAPpy/Client.py	Tue Jan 11 21:23:17 2011
+***************
+*** 39,49 ****
+  #
+  ################################################################################
+  """
+- from __future__ import nested_scopes
+  
+  ident = '$Id: Client.py,v 1.20 2004/04/10 04:22:52 irjudson Exp $'
+  from version import __version__
+  
+  #import xml.sax
+  import urllib
+  from types import *
+--- 39,50 ----
+  #
+  ################################################################################
+  """
+  
+  ident = '$Id: Client.py,v 1.20 2004/04/10 04:22:52 irjudson Exp $'
+  from version import __version__
+  
++ from __future__ import nested_scopes
++ 
+  #import xml.sax
+  import urllib
+  from types import *
+diff -cr SOAPpy-0.11.6/SOAPpy/GSIServer.py SOAPpy-0.11.6-original/SOAPpy/GSIServer.py
+*** SOAPpy-0.11.6/SOAPpy/GSIServer.py	Tue Jan 11 21:24:01 2011
+--- SOAPpy-0.11.6-original/SOAPpy/GSIServer.py	Tue Jan 11 21:23:17 2011
+***************
+*** 42,52 ****
+  #
+  ################################################################################
+  """
+- from __future__ import nested_scopes
+  
+  ident = '$Id: GSIServer.py,v 1.4 2004/02/04 03:21:02 irjudson Exp $'
+  from version import __version__
+  
+  #import xml.sax
+  import re
+  import socket
+--- 42,53 ----
+  #
+  ################################################################################
+  """
+  
+  ident = '$Id: GSIServer.py,v 1.4 2004/02/04 03:21:02 irjudson Exp $'
+  from version import __version__
+  
++ from __future__ import nested_scopes
++ 
+  #import xml.sax
+  import re
+  import socket
+diff -cr SOAPpy-0.11.6/SOAPpy/Server.py SOAPpy-0.11.6-original/SOAPpy/Server.py
+*** SOAPpy-0.11.6/SOAPpy/Server.py	Tue Jan 11 21:24:23 2011
+--- SOAPpy-0.11.6-original/SOAPpy/Server.py	Tue Jan 11 21:23:17 2011
+***************
+*** 39,49 ****
+  #
+  ################################################################################
+  """
+- from __future__ import nested_scopes
+  
+  ident = '$Id: Server.py,v 1.20 2004/04/28 21:47:10 warnes Exp $'
+  from version import __version__
+  
+  #import xml.sax
+  import re
+  import socket
+--- 39,50 ----
+  #
+  ################################################################################
+  """
+  
+  ident = '$Id: Server.py,v 1.20 2004/04/28 21:47:10 warnes Exp $'
+  from version import __version__
+  
++ from __future__ import nested_scopes
++ 
+  #import xml.sax
+  import re
+  import socket
+diff -cr SOAPpy-0.11.6/SOAPpy/Types.py SOAPpy-0.11.6-original/SOAPpy/Types.py
+*** SOAPpy-0.11.6/SOAPpy/Types.py	Tue Jan 11 21:24:20 2011
+--- SOAPpy-0.11.6-original/SOAPpy/Types.py	Tue Jan 11 21:23:17 2011
+***************
+*** 32,42 ****
+  #
+  ################################################################################
+  """
+- from __future__ import nested_scopes
+  
+  ident = '$Id: Types.py,v 1.17 2004/09/11 03:03:33 warnes Exp $'
+  from version import __version__
+  
+  import UserList
+  import base64
+  import cgi
+--- 32,43 ----
+  #
+  ################################################################################
+  """
+  
+  ident = '$Id: Types.py,v 1.17 2004/09/11 03:03:33 warnes Exp $'
+  from version import __version__
+  
++ from __future__ import nested_scopes
++ 
+  import UserList
+  import base64
+  import cgi

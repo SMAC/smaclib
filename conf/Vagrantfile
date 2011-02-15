@@ -1,22 +1,27 @@
 Vagrant::Config.run do |config|
     config.vm.box = "lucid32"
 
-    # config.vm.network "33.1.1.1"
+    #config.vm.network "34.34.34.10"
 
-    config.vm.forward_port "mongodb", 27017, 20000
-    config.vm.forward_port "mongodb-web-admin", 28017, 20001
-    config.vm.forward_port "redis", 6379, 20002
+    #config.vm.forward_port "mongodb", 27017, 20000
+    #config.vm.forward_port "mongodb-web-admin", 28017, 20001
+    #config.vm.forward_port "archiver-rpc", 7080, 7080
+    #config.vm.forward_port "archiver-thrift", 7081, 7081
+    #config.vm.forward_port "archiver-ftp", 10000, 10000
 
-    # config.vm.share_folder("v-data", "/vagrant_data", "../data")
+    config.vm.share_folder("source", "/smac-source/smaclib", "smaclib")
+    config.vm.share_folder("twisted-plugins", "/smac-source/twisted", "twisted")
+    config.vm.share_folder("smac-modules", "/smac-source/modules", "modules")
 
-    config.vm.provisioner = :chef_solo
+    config.vm.provision :chef_solo do |chef|
+      chef.cookbooks_path = "conf/chef/cookbooks"
+      chef.roles_path = "conf/chef/roles"
 
-    config.chef.cookbooks_path = "conf/chef/cookbooks"
-    config.chef.roles_path = "conf/chef/roles"
+      chef.add_role "default"
+      chef.add_role "archiver"
 
-    config.chef.add_role "central_server"
-
-    config.chef.json.merge!({
-        :mongodb => {:rest => true}
-    })
+      chef.json.merge!({
+          :mongodb => {:rest => true}
+      })
+    end
 end
