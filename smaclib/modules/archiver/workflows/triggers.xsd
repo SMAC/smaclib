@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+	xmlns:sw="http://smac.hefr.ch/archiver/workflow"
+	targetNamespace="http://smac.hefr.ch/archiver/workflow"
+	elementFormDefault="qualified">
+	
+	<xs:complexType name="equality-predicate">
+		<xs:attribute name="is" use="required" type="xs:string"/>
+	</xs:complexType>
+	
+	<xs:complexType name="predicate-group">
+		<xs:choice minOccurs="1" maxOccurs="unbounded">
+			<xs:group ref="sw:predicates"></xs:group>
+		</xs:choice>
+	</xs:complexType>
+	
+	<xs:complexType name="negation-predicate">
+		<xs:choice minOccurs="1" maxOccurs="1">
+			<xs:group ref="sw:predicates"></xs:group>
+		</xs:choice>
+	</xs:complexType>
+	
+	<xs:group name="predicates">
+		<xs:choice>
+			<xs:element name="extension" type="sw:equality-predicate"/>
+			<xs:element name="role" type="sw:equality-predicate"/>
+			<xs:element name="not" type="sw:negation-predicate"/>
+			<xs:element name="any" type="sw:predicate-group"/>
+			<xs:element name="all" type="sw:predicate-group"/>
+		</xs:choice>
+	</xs:group>
+</xs:schema>

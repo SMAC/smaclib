@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workflow
+	xmlns="http://smac.hefr.ch/archiver/workflow"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://smac.hefr.ch/archiver/workflow workflow.xsd">
+
+	<meta>
+		<name>Slideshow processing</name>
+		<author>Jonathan Stoppani</author>
+		<description>
+			<p>Processes all uploaded slideshow documents by converting them to PDF files and extrating the page images.</p>
+		</description>
+	</meta>
+	
+	<trigger>
+	</trigger>
+	
+	<task name="A"></task>
+</workflow>

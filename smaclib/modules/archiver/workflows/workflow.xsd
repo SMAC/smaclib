@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+	xmlns:sw="http://smac.hefr.ch/archiver/workflow"
+	targetNamespace="http://smac.hefr.ch/archiver/workflow"
+	elementFormDefault="qualified">
+	
+	<xs:include schemaLocation="triggers.xsd"></xs:include>
+	
+	<xs:complexType name="tag" mixed="true">
+		<xs:choice maxOccurs="unbounded" minOccurs="0">
+			<xs:element name="strong" type="sw:tag"/>
+			<xs:element name="em" type="sw:tag"/>
+		</xs:choice>
+	</xs:complexType>
+	
+	<xs:complexType name="html" mixed="true">
+		<xs:sequence maxOccurs="unbounded">
+			<xs:element name="p" type="sw:tag"/>
+		</xs:sequence>
+	</xs:complexType>
+	
+	<xs:complexType name="workflow-meta">
+		<xs:sequence>
+			<xs:element name="name" type="xs:string"/>
+			<xs:element name="author" type="xs:string"/>
+			<xs:element name="description" type="sw:html"/>
+		</xs:sequence>
+	</xs:complexType>
+	
+	<xs:complexType name="workflow-task">
+		<xs:sequence minOccurs="0" maxOccurs="unbounded">
+			<xs:element name="param">
+				<xs:complexType mixed="true">
+					<xs:attribute name="name" use="required" type="xs:NMTOKEN"/>
+					<xs:attribute name="type" use="optional" default="str">
+						<xs:simpleType>
+							<xs:restriction base="xs:string">
+								<xs:enumeration value="str"/>
+								<xs:enumeration value="int"/>
+								<xs:enumeration value="float"/>
+								<xs:enumeration value="unicode"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:attribute>
+				</xs:complexType>
+			</xs:element>
+		</xs:sequence>
+		<xs:attribute name="name" type="xs:ID" use="required"/>
+		<xs:attribute name="depends-on" type="xs:IDREFS" use="optional"/>
+		<xs:attribute name="class" type="xs:string"/>
+	</xs:complexType>
+	
+	<xs:complexType name="workflow-root">
+		<xs:sequence>
+			<xs:element name="meta" type="sw:workflow-meta"/>
+			<xs:element name="trigger" type="sw:predicate-group"/>
+			<xs:element name="task" type="sw:workflow-task" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	
+	<xs:element name="workflow" type="sw:workflow-root"/>
+</xs:schema>
