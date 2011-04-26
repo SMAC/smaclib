@@ -20,6 +20,7 @@ def upload(module, files, role):
         except xmlrpclib.ProtocolError as e:
             print "Could not allocate an upload slot:", e.errcode, e.errmsg
         else:
+            print slot
             slot = urlparse.urlparse(slot)
             client = ftplib.FTP()
             client.connect(slot.hostname, slot.port)
@@ -40,7 +41,7 @@ def upload(module, files, role):
 
 def report(uploads):
     for id, file in uploads.iteritems():
-        print "{}    {}".format(id, file)
+        print "{0}    {1}".format(id, file)
 
 
 def main():

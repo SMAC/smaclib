@@ -1,11 +1,6 @@
 
-
-from smaclib import brokers
 from smaclib import routers
-from smaclib.db import mongo
 from smaclib.conf import settings
-
-import txmongo
 
 from twisted.application import service
 from twisted.application import internet
@@ -28,39 +23,38 @@ class ModuleMaker(object):
     options = ModuleOptions
     module = None
 
-    def load_settings(self, configfile):
+    def loadSettings(self, configfile):
         if configfile:
             settings.load(configfile)
 
-    def get_module(self):
+    def getModule(self):
         raise NotImplementedError("No module provided")
 
     
-    def make_service(self, options):
-        self.load_settings(options['configfile'])
+    def makeService(self, options):
+        self.loadSettings(options['configfile'])
 
         module_service = service.MultiService()
 
-        # MongoDB
-        mongo.connection.set(txmongo.lazyMongoConnectionPool(
-                                            **settings.mongodb['connection']))
-
-        self.module = self.get_module()
+        self.module = self.getModule()
         
         if settings.rest['expose']:
             # Root resource
             root = resource.Resource()
 
             if 'rpc' in settings.rest['expose']:
+                from smaclib.brokers.xmlrpc import XmlRpcBroker
+                
                 # Publish XML RPC interface
                 path = settings.rest['expose']['rpc']
-                root.putChild(path, brokers.XmlRpcBroker(self.module,
+                root.putChild(path, XmlRpcBroker(self.module,
                               router=routers.PrefixRouter('xmlrpc', 'remote')))
         
             if 'soap' in settings.rest['expose']:
+                from smaclib.brokers.soap import SoapBroker
                 # Publish the SOAP interface
                 path = settings.rest['expose']['soap']
-                root.putChild(path, brokers.SoapBroker(self.module,
+                root.putChild(path, SoapBroker(self.module,
                               router=routers.PrefixRouter('soap', 'remote')))
             
             if settings.rest['ssl']:
@@ -80,20 +74,16 @@ class ModuleMaker(object):
                 )
             rest_service.setServiceParent(module_service)
 
+        from smaclib.brokers.thrift import ThriftBroker
+
         thrift_service = internet.TCPServer(
             settings.thrift_port,
-            brokers.ThriftBroker(self.module,
-                                 routers.PrefixRouter('thrift', 'remote'))
+            ThriftBroker(self.module, routers.PrefixRouter('thrift', 'remote'))
         )
         thrift_service.setServiceParent(module_service)
         
-        print "Starting service, my module ID is", self.module.remote_getID()
+        print "Starting service, my module ID is", self.module.getID()
 
         return module_service
 
-    def makeService(self, options):
-        """
-        Proxy method to avoid twisted' naming conventions.
-        """
-        return self.make_service(options)
 

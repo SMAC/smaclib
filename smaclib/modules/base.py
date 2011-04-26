@@ -81,7 +81,11 @@ class Module(object):
         exist.
         """
         task = self.task_manager.get(task_id)
-        return ttypes.TaskInfo(task.id, task.name, task.status, task.completed)
+        parent = task.parent.id if task.parent is not None else None
+        return ttypes.TaskInfo(task_id=task.id, name=task.name,
+            status=task.status, statustext=task.statustext, parent=parent,
+            completed=task.completed)
+        
 
     def remote_abortTask(self, task_id):
         """

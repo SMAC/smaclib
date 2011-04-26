@@ -141,7 +141,7 @@ class ConverterProcessProtocol(process.LineProcessProtocol):
         if reason.check(error.ProcessDone):
             self.exited.callback(self.job_id)
         else:
-            self.exited.errback((self.job_id, reason))
+            self.exited.errback(reason)
 
 class ConverterServerFactory(protocol.ServerFactory):
     protocol = ConverterServerProtocol
@@ -183,7 +183,7 @@ class ConverterServerFactory(protocol.ServerFactory):
 
         args = ["-v"] * 5 + [
             "-f", format,
-            "-T", "10",
+            #"-T", "10",
             tempsrc.path,
         ]
 
@@ -194,11 +194,14 @@ class ConverterServerFactory(protocol.ServerFactory):
         try:
             d = defer.Deferred()
             prot = ConverterProcessProtocol(d, job_id)
+            print " ".join([bin] + args)
             reactor.spawnProcess(prot, bin, [bin] + args, env=os.environ)
             d.addCallback(self.handleResult, tempsrc, target)
-            d.addErrback(self.handleError, tempdir)
+            d.addErrback(self.handleError, job_id, tempdir)
             result = yield d
-        except:
+        except Exception as e:
+            print "ERROR"
+            print e
             raise
         finally:
             # Release the lock only after some time to make sure all uno
@@ -219,9 +222,7 @@ class ConverterServerFactory(protocol.ServerFactory):
         source.parent().remove()
 
     @defer.inlineCallbacks
-    def handleError(self, result, source):
-        job_id, failure = result
-
+    def handleError(self, failure, job_id, source):
         log.err(failure.value, "JID {0} - Conversion failed".format(job_id))
 
         try:

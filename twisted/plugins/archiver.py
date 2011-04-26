@@ -1,10 +1,12 @@
-
+import txmongo
 
 from twisted.application import internet
+from twisted.internet import ssl
 from twisted.cred import portal
+from twisted.web import server, static
 
 from smaclib import ftp
-from smaclib import modules
+from smaclib.db import mongo
 from smaclib.conf import settings
 from smaclib.cred import checkers
 from smaclib.twisted.plugins import module
@@ -17,27 +19,33 @@ class ArchiverMaker(module.ModuleMaker):
     tapname = "smac-archiver"
     description = "Archiver module for SMAC."
 
-    def load_settings(self, configfile):
+    def loadSettings(self, configfile):
         from smaclib.modules.archiver import settings as archiver_settings
         settings.load(archiver_settings)
         
-        super(ArchiverMaker, self).load_settings(configfile)
+        super(ArchiverMaker, self).loadSettings(configfile)
 
-    def get_module(self):
-        self.realm = ftp.TransfersRegister(settings.uploads_root,
-                                           settings.completed_root)
-        return modules.Archiver(self.realm)
+    def getModule(self):
+        from smaclib.modules.archiver import module
+        
+        self.ftp_realm = ftp.TransfersRegister(settings.downloads_root,
+                                               settings.uploads_root,
+                                               settings.completed_root)
+        return module.Archiver(self.ftp_realm)
 
-    def make_service(self, options):
-        module_service = super(ArchiverMaker, self).make_service(options)
+    def makeService(self, options):
+        # MongoDB
+        mongo.connection.set(txmongo.lazyMongoConnectionPool(
+                                            **settings.mongodb['connection']))
+        
+        module_service = super(ArchiverMaker, self).makeService(options)
 
-        transfer_portal = portal.Portal(self.realm, [
-            checkers.HomeDirectoryExistence(settings.uploads_root)
+        transfer_portal = portal.Portal(self.ftp_realm, [
+            checkers.HomeDirectoryExistence(settings.uploads_root,
+                                            settings.downloads_root)
         ])
         
         ##
-        
-        #from twisted.internet import ssl
         #context = ssl.DefaultOpenSSLContextFactory(
         #    settings.server_key,
         #    settings.server_crt
@@ -56,8 +64,6 @@ class ArchiverMaker(module.ModuleMaker):
         ftp_service = internet.TCPServer(settings.ftp_server_port,
                                          ftp.FTPFactory(transfer_portal),
                                          interface=settings.ftp_server_ip)
-
-                                        
         ftp_service.setServiceParent(module_service)
 
         return module_service

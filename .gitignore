@@ -6,3 +6,4 @@ dropin.cache
 .vagrant
 modules
 docs/_build
+Vagrantfile

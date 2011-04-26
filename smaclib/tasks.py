@@ -7,6 +7,7 @@ from smaclib.api.ttypes import TaskStatus
 from smaclib.utils import sleep
 
 from twisted.internet import defer
+from twisted.python import log
 
 from zope.interface import Interface
 from zope.interface import implements
@@ -42,9 +43,12 @@ class TaskManager(object):
             d.addCallback(lambda _: self.unregister(task))
             return result
 
+        task.addErrback(log.err)
         task.addBoth(_unreg, task)
 
         self.tasks[task.id] = task
+        
+        return task
 
     def schedule(self, task):
         self.register(task)
@@ -85,7 +89,12 @@ class ITaskRunner(Interface):
     def start():
         """
         Executes the operation for which this runner was implemented and
-        keeps the task updated. This method is normally called by
+        keeps the task updated.
+
+        This method does return nothing. If you want retrieve the task status
+        use the ``getTask`` method.
+
+        This method is normally called by the task itself when it is started.
         """
 
 
@@ -126,21 +135,22 @@ class DeferredRunner(object):
         return self.task
 
     def start(self):
+        self.task._statustext = "Running"
         d = defer.maybeDeferred(self.function, *self.args, **self.kwargs)
         d.addCallbacks(self.taskCompleted, self.taskFailed)
-        return d.chainDeferred(self.task)
 
     def taskCompleted(self, result):
-        return result
+        self.task.callback(result, "Completed")
 
     def taskFailed(self, failure):
-        return failure
+        self.task.errback(failure, "Failed")
 
 
 class CompoundTask(defer.DeferredList, object):
     def __init__(self, name, runner, deferredList=None, taskid=None):
         self.name = name
         self.runner = runner
+        self.parent = None
         self.tasks = deferredList or []
         self.id = taskid or str(uuid.uuid4())
 
@@ -150,22 +160,47 @@ class CompoundTask(defer.DeferredList, object):
         if deferredList == None:
             self.pause()
 
+        for task in deferredList or []:
+            task.setTaskParent(self)
 
     def __call__(self, *dummy, **kwdummy):
         if self.status != TaskStatus.WAITING:
             raise RuntimeError("Task already started")
 
         self.runner.start()
+        
+        return self
+
+    def addTaskObserver(self, callback, *args, **kwargs):
+        for task in self.tasks:
+            task.addTaskObserver(callback, *args, **kwargs)
+
+    def setTaskParent(self, task):
+        if self.parent is not None:
+            raise RuntimeError("This task already has a parent.")
+        self.parent = task
 
     def addTask(self, task):
         assert not self.called
-
+        task.setTaskParent(self)
         self.tasks.append(task)
         index = len(self.resultList)
         self.resultList.append(None)
         task.addCallbacks(self._cbDeferred, self._cbDeferred,
                           callbackArgs=(index,defer.SUCCESS),
                           errbackArgs=(index,defer.FAILURE))
+
+    @property
+    def statustext(self):
+        if not self.tasks:
+            return TaskStatus.WAITING
+
+        statuses = [0, 0, 0, 0, 0]
+
+        for t in self.tasks:
+            statuses[t.status] += 1
+
+        return "Composite task ({0})".format(", ".join([str(s) for s in statuses]))
 
     @property
     def status(self):
@@ -222,6 +257,17 @@ class CompoundTask(defer.DeferredList, object):
         return completed / len(self.tasks)
 
 
+class SimpleCompositeTask(CompoundTask):
+    def __init__(self, name, deferredList, taskid=None):
+        super(SimpleCompositeTask, self).__init__(name, None, deferredList, taskid)
+
+    def __call__(self, *dummy, **kwdummy):
+        raise RuntimeError("Cannot start a simple composite task, start the individual tasks")
+
+    def addTask(self, task):
+        raise RuntimeError("Cannot add a task to a simple composite task")
+
+
 class Task(defer.Deferred, object):
 
     UNDEFINED = -1
@@ -273,7 +319,7 @@ class Task(defer.Deferred, object):
 
     @property
     def statustext(self):
-        return self._status
+        return self._statustext
 
     @statustext.setter
     def statustext(self, value):
@@ -301,11 +347,11 @@ class Task(defer.Deferred, object):
 
     def __str__(self):
         task = '{0.name}: {0.statustext}'.format(self)
-        
+
         if self.completed >= 0:
             completed = '{0:.2f}'.format(self.completed * 100)
-            completed = completed.strip('0').strip('.')
-            
+            completed = completed.rstrip('0').rstrip('.')
+
             task = '{0} ({1}% completed)'.format(task, completed)
 
         return task
@@ -316,6 +362,8 @@ class Task(defer.Deferred, object):
 
         self.runner.start()
         self.status = TaskStatus.RUNNING
+        
+        return self
 
     def pause(self):
         super(Task, self).pause()
@@ -332,15 +380,19 @@ class Task(defer.Deferred, object):
         if self.called:
             self._runCallbacks()
 
-    def errback(self, fail=None):
+    def errback(self, fail=None, statustext=None):
+        if statustext is not None:
+            self._statustext = unicode(statustext)
         self.status = TaskStatus.FAILED
         super(Task, self).errback(fail)
 
-    def callback(self, result):
+    def callback(self, result, statustext=None):
         assert not isinstance(result, defer.Deferred)
 
+        if statustext is not None:
+            self._statustext = unicode(statustext)
+        self._completed = 1
         self.status = TaskStatus.COMPLETED
-        self.completed = 1
 
         super(Task, self).callback(result)
 

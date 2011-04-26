@@ -163,7 +163,7 @@ class _ComplexTypeMixin(object):
         the model data.
         """
         cls = self.__class__
-        return '{}({})'.format(cls.__name__, pprint.pformat(self.__model__))
+        return '{0}({1})'.format(cls.__name__, pprint.pformat(self.__model__))
 
     def __mongo__(self):
         """

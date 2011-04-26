@@ -1,2 +1,2 @@
-VIRTUALENVWRAPPER_PYTHON=/usr/local/bin/python2.7
+VIRTUALENVWRAPPER_PYTHON=/usr/bin/python2.6
 source /usr/local/bin/virtualenvwrapper.sh

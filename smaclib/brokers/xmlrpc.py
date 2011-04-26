@@ -80,11 +80,11 @@ class XmlRpcBroker(base.Broker, xmlrpc.XMLRPC):
             func = self.router(self.obj, function_path)
         except AttributeError:
             raise xmlrpc.NoSuchFunction(self.NOT_FOUND,
-                    "function {} not found".format(function_path))
+                    "function {0} not found".format(function_path))
         else:
             if not callable(func):
                 raise xmlrpc.NoSuchFunction(self.NOT_FOUND,
-                        "function {} not callable".format(function_path))
+                        "function {0} not callable".format(function_path))
             else:
                 return func
     _getFunction = _get_function

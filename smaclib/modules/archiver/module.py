@@ -2,21 +2,25 @@
 Archiver module interface implementation with FTP based file serving.
 """
 
-
+import itertools
+import os
+import tarfile
+import tempfile
 import warnings
 
 from smaclib.api.errors import ttypes as error
 from smaclib.db.mongo import ObjectId
 from smaclib.conf import settings
 from smaclib.utils import sleep
+from smaclib import tasks
 from smaclib.modules.base import Module
-from smaclib.modules.archiver import encoding
 from smaclib.modules.archiver import triggers
 from smaclib.modules.archiver import workflow
 from smaclib.models.assets import Asset, AssetVersion
 
 from twisted.internet import defer
 from twisted.internet import threads
+from twisted.python import filepath
 
 from lxml import etree
 
@@ -100,15 +104,46 @@ class Archiver(Module):
 
         :param asset: The model instance of the asset to process.
         :type asset: smaclib.models.assets.Asset
-        
+
         .. todo::
            Provide a working implementation
         """
-        
+
+        task_list = []
+
         for trigger, path in self.triggers.iteritems():
             if trigger.evaluate(asset):
                 task = workflow.Workflow(asset, path).getTask()
                 self.task_manager.schedule(task)
+                task_list.append(task)
+
+        filename = asset.versions[0].filename.path
+        name = "Running workflows for {0}".format(filename)
+        compound_task = tasks.SimpleCompositeTask(name, task_list)
+        self.task_manager.register(compound_task)
+        return compound_task
+
+    @defer.inlineCallbacks
+    def remote_requestDownloadSlot(self, version_id):
+        """
+        Creates a new FTP backed download slot and returns the full FTP address
+        to the client.
+        """
+        _, version = yield Asset.collection.find_version(version_id)
+
+        # Create a new upload slot by using the transfers register
+        slot_id = self.transfers_register.allocate_download_slot()
+
+        source = version.filename
+        target = self.transfers_register.get_download_directory(slot_id)
+        target = target.child(source.basename())
+        source.linkTo(target)
+
+        url = self.transfers_register.address_by_id(slot_id)
+        url = os.path.join(url, source.basename())
+
+        # Create the complete ftp address
+        defer.returnValue(url)
 
     def remote_requestUploadSlot(self):
         """
@@ -128,7 +163,7 @@ class Archiver(Module):
         """
         Allows a client to abort a not yet completed upload by providing its ID.
         Clean up all resources coupled with the allocated upload slot.
-        
+
         .. todo::
            Thoroughly test this behavior and the behavior of the FTP server.
            Add auto-cleaning capabilities after a certain time-out and check
@@ -142,12 +177,167 @@ class Archiver(Module):
         if completed.exists():
             completed.remove()
 
+    @staticmethod
+    def buildVersionsBundle(asset):
+        tarname = str(asset.pk) + '-bundle.tar.gz'
+
+        tempdir = tempfile.mkdtemp(prefix='smac-', suffix='-' + str(asset.pk) + '-bundle')
+        tempdir = filepath.FilePath(tempdir)
+        temptar = tempdir.child(tarname)
+
+        # TODO: Use context manager protocol once switched to python 2.7
+        bundle = tarfile.open(name=temptar.path, mode='w:gz')
+        for version in asset.versions:
+            f = version.filename
+
+            if f.path.endswith('-bundle.tar.gz'):
+                continue
+
+            bundle.add(f.path, f.basename())
+        bundle.close()
+        del bundle
+
+        # Move to final destination
+        tardest = asset.original.filename.parent().child(tarname)
+        temptar.moveTo(tardest)
+
+        # Delete temp directory
+        tempdir.remove()
+
+        return tardest
+
+    @staticmethod
+    def buildPublishingBundle(talk_id, files, tardest):
+        tempdir = tempfile.mkdtemp(prefix='smac-', suffix='-' + talk_id + '-bundle')
+        tempdir = filepath.FilePath(tempdir)
+        temptar = tempdir.child(tardest.basename())
+
+        # TODO: Use context manager protocol once switched to python 2.7
+        bundle = tarfile.open(name=temptar.path, mode='w:gz')
+        for path, filename in files:
+            bundle.add(path, filename)
+        bundle.close()
+        del bundle
+
+        # Move to final destination
+        temptar.moveTo(tardest)
+
+        # Delete temp directory
+        tempdir.remove()
+
+        return tardest
+
     @defer.inlineCallbacks
-    def remote_archiveUpload(self, talk_id, upload_id, role):
+    def remote_requestPublishingSlot(self, talk_id):
+        assets = yield Asset.collection.find({'talk_id': talk_id})
+
+        # Filter assets
+        def take(version):
+            base, ext = version.filename.splitext()
+            return ext not in ('.gz', '.tar', '.avi')
+
+        dest = settings.data_root.child(talk_id).child(talk_id + '-bundle.tar.gz')
+        l = len(dest.parent().path)
+
+        versions = itertools.chain(*[a.versions for a in assets])
+        versions = [v for v in versions if take(v)]
+        versions = [v.filename for v in versions]
+        
+        # Check creation date
+        if dest.exists():
+            mtime = dest.getModificationTime()
+            
+            for version in versions:
+                if version.getModificationTime() > mtime:
+                    versions = [(v.path, v.path[l+1:]) for v in versions]
+                    source = yield threads.deferToThread(self.buildPublishingBundle, talk_id, versions, dest)
+                    break
+            else:
+                # Don't rebuild it
+                source = dest
+        
+        slot_id = self.transfers_register.allocate_download_slot()
+
+        target = self.transfers_register.get_download_directory(slot_id)
+        target = target.child(source.basename())
+        source.linkTo(target)
+
+        url = self.transfers_register.address_by_id(slot_id)
+        url = os.path.join(url, source.basename())
+
+        # Create the complete ftp address
+        defer.returnValue(url)
+
+    @defer.inlineCallbacks
+    def remote_updateVersionsBundle(self, document_id):
         """
-        Moves a file to its final destination and add information about it
-        to the database.
+        TODO: Add this to the workflow and do it automatically. Maybe wrap it
+              in a task.
         """
+
+        asset = yield Asset.collection.one({
+            '_id': ObjectId(document_id),
+        })
+
+        dest = yield threads.deferToThread(self.buildVersionsBundle, asset)
+
+        if asset.bundle is None:
+            asset.versions.append(AssetVersion(
+                version_id=ObjectId(),
+                filename=dest
+            ))
+            yield asset.save()
+
+        defer.returnValue(str(asset.bundle.version_id))
+
+    @defer.inlineCallbacks
+    def remote_archiveSlideshowMetadata(self, slideshow_id, upload_id):
+        source = yield self.getUpload(upload_id)
+        extension = source.splitext()[1]
+
+        asset = yield Asset.collection.one({
+            '_id': ObjectId(slideshow_id),
+            'role': 'slideshow',
+        })
+        destination = settings.data_root.child(asset.talk_id) \
+                                        .child(asset.role) \
+                                        .child(str(asset.pk) + '-metadata' + extension)
+        source.moveTo(destination)
+
+        if asset.metadata is None:
+            asset.versions.append(AssetVersion(
+                version_id=ObjectId(),
+                filename=destination
+            ))
+            yield asset.save()
+
+        defer.returnValue(str(asset.metadata.version_id))
+
+    @defer.inlineCallbacks
+    def remote_archiveVideoSegmentation(self, video_id, upload_id):
+        source = yield self.getUpload(upload_id)
+        extension = source.splitext()[1]
+
+        asset = yield Asset.collection.one({
+            '_id': ObjectId(video_id),
+            'role': 'video',
+        })
+        destination = settings.data_root.child(asset.talk_id) \
+                                        .child(asset.role) \
+                                        .child(str(asset.pk) + '-segmentation' + extension)
+        source.moveTo(destination)
+        if asset.segmentation is None:
+            asset.versions.append(AssetVersion(
+                version_id=ObjectId(),
+                filename=destination
+            ))
+            yield asset.save()
+
+        defer.returnValue(str(asset.segmentation.version_id))
+
+
+    @defer.inlineCallbacks
+    def getUpload(self, upload_id):
         # 1. Santiy check and initialization
         source = settings.completed_root.globChildren(upload_id + '.*')
         if not source:
@@ -162,12 +352,20 @@ class Archiver(Module):
             # If the file still does not exists, throw the exception
             if not source:
                 raise error.InvalidUploadID(upload_id)
-        source = source[0]
+        defer.returnValue(source[0])
+
+    @defer.inlineCallbacks
+    def remote_archiveUpload(self, talk_id, upload_id, role):
+        """
+        Moves a file to its final destination and add information about it
+        to the database.
+        """
+        source = yield self.getUpload(upload_id)
         extension = source.splitext()[1]
 
         # TODO: Check if the talk identified by talk_id exists and bind the
         #       document to it.
-        
+
         # TODO: Validate the given ``role`` argument (either strictly against a
         #       list of known roles or loosely for sanity).
 
@@ -202,106 +400,7 @@ class Archiver(Module):
 
         # TODO: Define the return value of this method. Shall it be the task,
         #       the version_id/asset_id or both?
-        defer.returnValue(str(version_id))
-
-
-#    @defer.inlineCallbacks
-#    def encode_video(self, video_id, encoding_info):
-#        """
-#        Transcodes the video identified by video_id to the format specified by
-#        the format attribute of the encoding_info instance.
-#        """
-#        # 1. Get the asset from the database
-#        try:
-#            video, version = yield Asset.collection.find_version(video_id)
-#        except Asset.DoesNotExist:
-#            raise error.AssetNotFound(video_id)
-#        else:
-#            if version.mimetype.type != 'video':
-#                raise error.InvalidFormat(video_id, str(version.mimetype))
-#
-#        # 2. Check destination format
-#        source_extension = mimetypes.guess_extension(str(version.mimetype))
-#        target_extension = mimetypes.guess_extension(encoding_info.mimetype)
-#
-#        if target_extension is None:
-#            raise error.UnknownMimetype(encoding_info.mimetype)
-#
-#        encoder = encoding.FFmpegEncoder()
-#
-#        yield encoder.init()
-#
-#        if not encoder.can_decode(source_extension):
-#            raise error.NoSuitableEncoder(str(version.mimetype))
-#
-#        if not encoder.can_encode(target_extension):
-#            raise error.NoSuitableEncoder(encoding_info.mimetype)
-#
-#        # 3. Check and retrieve the bitrates.
-#        def _bitrate(bitrate, presets, media):
-#            """
-#            Checks first in the given presets if a certain bitrate is present
-#            and if not validates the provided value to check if it is a valid
-#            bitrate representation.
-#
-#            If both fail, raises an error.InvalidBitrate exception with the
-#            provided media type.
-#            """
-#            # First try to get them from the presets (allows the module to
-#            # override provided values):
-#            try:
-#                bitrate = presets[bitrate]
-#            except KeyError:
-#                # Not provided in the presets, check if the value is a correct
-#                # bitrate
-#                if not encoder.validate_bitrate(bitrate):
-#                    raise error.InvalidBitrate(media, bitrate)
-#            else:
-#                return bitrate
-#
-#        video_bitrate = _bitrate(encoding_info.video_bitrate,
-#                                 settings.video_bitrates, "video")
-#
-#        audio_bitrate = _bitrate(encoding_info.audio_bitrate,
-#                                 settings.audio_bitrates, "audio")
-#
-#        new_id = ObjectId()
-#        basename = str(new_id) + target_extension
-#        target = version.filename.parent().child(basename)
-#
-#        # 4. Add the new version to the asset
-#        new_version = AssetVersion(
-#            version_id=new_id,
-#            mimetype=encoding_info.mimetype,
-#            filename=target
-#        )
-#
-#        video.versions.append(new_version)
-#
-#        yield video.save()
-#
-#        # 5. Start conversion process
-#        encoder.flag('y') \
-#               .read_from(version.filename.path) \
-#               .option('vb', video_bitrate) \
-#               .option('ab', audio_bitrate) \
-#               .option('ar', settings.audio_sampling_rate) \
-#               .write_to(target.path)
-#
-#        task = encoder.encode()
-#
-#        @defer.inlineCallbacks
-#        def _save(result):
-#            """
-#            Inserts a new asset in the database by copying the old one.
-#            """
-#            new_version.archived = True
-#            yield video.save()
-#            defer.returnValue(result)
-#
-#        task.addCallback(_save)
-#        self.task_manager.register(task)
-#        defer.returnValue(task.id)
+        defer.returnValue((str(version_id), task.id))
 
     def remote_triggerWorkflow(self, asset_id, workflow):
         raise NotImplementedError()

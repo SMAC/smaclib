@@ -26,11 +26,11 @@ class DoesNotExist(MongoError):
         self.query = query
 
     def __str__(self):
-        return "No {} found for query {}".format(self.model.__name__,
+        return "No {0} found for query {1}".format(self.model.__name__,
                                                  pprint.pformat(self.query))
 
     def __repr__(self):
-        return "DoesNotExist(model={}.{}, query={})".format(
+        return "DoesNotExist(model={0}.{1}, query={2})".format(
             self.model.__module__, self.model.__name__,
             pprint.pformat(self.query))
 

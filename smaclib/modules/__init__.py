@@ -8,7 +8,8 @@ smac library provides brokers for the XMLRPC, SOAP and Thrift protocols).
 
 
 from smaclib.modules import base
-from smaclib.modules.archiver.module import Archiver
+#from smaclib.modules.archiver.module import Archiver
+#from smaclib.modules.analyzer.module import Analyzer
 
 
-__all__ = ['base', 'Archiver']
+__all__ = ['base']

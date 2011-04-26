@@ -97,8 +97,30 @@ class Asset(mongo.Document):
     role = fields.Unicode(required=True)
     
     @property
+    def segmentation(self):
+        for version in self.versions:
+            if version.filename.path.endswith('-segmentation.xml'):
+                return version
+    
+    @property
+    def metadata(self):
+        for version in self.versions:
+            if version.filename.path.endswith('-metadata.xml'):
+                return version
+    
+    @property
     def filename(self):
         return self.versions[0].filename
+    
+    @filename.setter
+    def filename(self, value):
+        self.versions[0].filename = value
+    
+    @property
+    def bundle(self):
+        for version in self.versions:
+            if version.filename.path.endswith('-bundle.tar.gz'):
+                return version
     
     @property
     def original(self):

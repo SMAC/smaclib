@@ -6,6 +6,13 @@ Various utilities to work on strings.
 import re
 
 
+def format_size(num):
+    for x in ['bytes', 'KB', 'MB', 'GB', 'TB']:
+        if num < 1024.0:
+            return "%3.1f %s" % (num, x)
+        num /= 1024.0
+
+
 def camelcase_to_underscore(string):
     """
     Converts string from CamelCase to underscore_lowercase. 

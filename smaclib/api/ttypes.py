@@ -186,6 +186,8 @@ class TaskInfo:
    - task_id
    - name
    - status
+   - statustext
+   - parent
    - completed
   """
 
@@ -194,13 +196,17 @@ class TaskInfo:
     (1, TType.STRING, 'task_id', None, None, ), # 1
     (2, TType.STRING, 'name', None, None, ), # 2
     (3, TType.I32, 'status', None, None, ), # 3
-    (4, TType.DOUBLE, 'completed', None, None, ), # 4
+    (4, TType.STRING, 'statustext', None, None, ), # 4
+    (5, TType.STRING, 'parent', None, None, ), # 5
+    (6, TType.DOUBLE, 'completed', None, None, ), # 6
   )
 
-  def __init__(self, task_id=None, name=None, status=None, completed=None,):
+  def __init__(self, task_id=None, name=None, status=None, statustext=None, parent=None, completed=None,):
     self.task_id = task_id
     self.name = name
     self.status = status
+    self.statustext = statustext
+    self.parent = parent
     self.completed = completed
 
   def read(self, iprot):
@@ -228,6 +234,16 @@ class TaskInfo:
         else:
           iprot.skip(ftype)
       elif fid == 4:
+        if ftype == TType.STRING:
+          self.statustext = iprot.readString();
+        else:
+          iprot.skip(ftype)
+      elif fid == 5:
+        if ftype == TType.STRING:
+          self.parent = iprot.readString();
+        else:
+          iprot.skip(ftype)
+      elif fid == 6:
         if ftype == TType.DOUBLE:
           self.completed = iprot.readDouble();
         else:
@@ -254,8 +270,16 @@ class TaskInfo:
       oprot.writeFieldBegin('status', TType.I32, 3)
       oprot.writeI32(self.status)
       oprot.writeFieldEnd()
+    if self.statustext != None:
+      oprot.writeFieldBegin('statustext', TType.STRING, 4)
+      oprot.writeString(self.statustext)
+      oprot.writeFieldEnd()
+    if self.parent != None:
+      oprot.writeFieldBegin('parent', TType.STRING, 5)
+      oprot.writeString(self.parent)
+      oprot.writeFieldEnd()
     if self.completed != None:
-      oprot.writeFieldBegin('completed', TType.DOUBLE, 4)
+      oprot.writeFieldBegin('completed', TType.DOUBLE, 6)
       oprot.writeDouble(self.completed)
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
