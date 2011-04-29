@@ -4,6 +4,8 @@ smac.egg-info
 *.log
 dropin.cache
 .vagrant
-modules
+/modules
 docs/_build
 Vagrantfile
+/conf
+/test.py

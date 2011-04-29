@@ -145,7 +145,7 @@ class Module(object):
         """
         # TODO: Provide an implementation
 
-    def shutdown(self):
+    def remote_shutdown(self):
         """
         Terminates the server process.
         """

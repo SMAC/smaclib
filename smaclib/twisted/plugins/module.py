@@ -74,13 +74,16 @@ class ModuleMaker(object):
                 )
             rest_service.setServiceParent(module_service)
 
-        from smaclib.brokers.thrift import ThriftBroker
-
-        thrift_service = internet.TCPServer(
-            settings.thrift_port,
-            ThriftBroker(self.module, routers.PrefixRouter('thrift', 'remote'))
-        )
-        thrift_service.setServiceParent(module_service)
+        try:
+            from smaclib.brokers.thrift import ThriftBroker
+        except ImportError:
+            print "Thrift libraries not found, service not exposed over thrift-rpc."
+        else:
+            thrift_service = internet.TCPServer(
+                settings.thrift_port,
+                ThriftBroker(self.module, routers.PrefixRouter('thrift', 'remote'))
+            )
+            thrift_service.setServiceParent(module_service)
         
         print "Starting service, my module ID is", self.module.getID()
 

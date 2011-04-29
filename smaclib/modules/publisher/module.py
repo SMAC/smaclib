@@ -6,11 +6,10 @@ import os
 import tempfile
 import tarfile
 
-from lxml import etree
-
 from smaclib.modules.base import Module
 from smaclib.modules import tasks as common_tasks
 from smaclib import tasks
+from smaclib import xml
 from smaclib.conf import settings
 
 from twisted.internet import threads
@@ -91,7 +90,7 @@ class PublishingDelegate(object):
         #extracted.globChildren('*-alignment.xml')[0].moveTo(data_root)
         
         # Create XML file
-        trans = Transformation(filepath.FilePath(__file__).parent().child('publisher.xsl').path)
+        trans = xml.Transformation(filepath.FilePath(__file__).parent().child('publisher.xsl').path)
         
         slide_fmt = data_root.globChildren('slideshow/*/*.png')[0].path
         slide_fmt = slide_fmt[len(data_root.path)+1:]
@@ -130,51 +129,6 @@ class PublishingDelegate(object):
         temptar.remove()
 
         return tempdir
-
-class Transformation(object):
-    """
-    Object oriented wrapper for XSL transformations using lxml.
-    """
-    def __init__(self, stylesheet):
-        self.path = stylesheet
-        
-        with open(stylesheet) as fh:
-            self.document = etree.parse(fh)
-        
-        self.extensions = {}
-        self.parameters = {}
-    
-    def register_function(self, namespace, func, name=None):
-        if not name:
-            name = func.__name__
-        
-        self.extensions[(namespace, name)] = func
-    
-    def register_element(self, namespace, name, element):
-        self.extensions[(namespace, name)] = element
-    
-    def transform(self, document_or_path, destination=None):
-        if isinstance(document_or_path, basestring):
-            with open(document_or_path) as fh:
-                document = etree.parse(fh)
-        else:
-            try:
-                document = etree.parse(document_or_path)
-            except AttributeError:
-                document = document_or_path
-        
-        transformation = etree.XSLT(self.document, extensions=self.extensions)
-        transformed = transformation(document, **self.parameters)
-        
-        if destination:
-            with open(destination, 'w') as fh:
-                fh.write(etree.tostring(transformed, pretty_print=True))
-        
-        return transformed
-    
-    def __call__(self, *args, **kwargs):
-        return self.transform(*args, **kwargs)
-
 
 
 class Publisher(Module):
