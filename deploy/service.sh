@@ -13,7 +13,7 @@ PLUGIN="${0##*/}"
 ### END INIT INFO
 # Author: Garret Heaton (powdahound@gmail.com)
 
-DAEMON=/usr/bin/twistd
+DAEMON=$(which twistd)
 PIDFILE=/var/run/$PLUGIN.pid
 LOGFILE=/var/log/$PLUGIN.log
 DAEMON_OPTS="--pidfile=$PIDFILE --logfile=$LOGFILE $PLUGIN"
